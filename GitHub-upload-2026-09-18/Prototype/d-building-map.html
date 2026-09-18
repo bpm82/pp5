@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f0e4">
+  <title>D館1階 調査マップ試作</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f0e4;
+      --surface: #fffdf7;
+      --ink: #25231e;
+      --muted: #6c685d;
+      --line: #2f8f8c;
+      --gold: #c6a14a;
+      --purple: #6f4aa0;
+      --border: rgba(37, 35, 30, 0.14);
+      font-family: "Yu Gothic UI", "Yu Gothic", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: #1e1d1a;
+      color: var(--ink);
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(100%, 430px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 0 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .heading-small {
+      margin: 0 0 2px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.13em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 600;
+    }
+
+    .progress {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: rgba(47, 143, 140, 0.13);
+    }
+
+    .progress span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .progress strong {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .guide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 8px 54px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .map-shell {
+      position: relative;
+      background: transparent;
+    }
+
+    .map-viewport {
+      height: clamp(310px, 44vh, 390px);
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+
+    .map-viewport::-webkit-scrollbar { display: none; }
+
+    .map-canvas {
+      position: relative;
+      width: calc(clamp(310px, 44vh, 390px) * 2.409);
+      height: 100%;
+      min-width: 790px;
+      background: transparent;
+    }
+
+    .floor-map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .selected-monument {
+      display: none;
+      position: absolute;
+      z-index: 2;
+      left: var(--x);
+      top: var(--y);
+      width: 7.2%;
+      aspect-ratio: 1;
+      border: 3px solid var(--gold);
+      border-radius: 50%;
+      background: #f9f6ed;
+      box-shadow: 0 0 0 3px rgba(255, 253, 247, 0.9), 0 4px 14px rgba(37, 35, 30, 0.24);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .selected-monument[data-selected="true"] { display: block; }
+
+    .selected-monument img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .map-slider-wrap {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px 5px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .map-slider-wrap input {
+      width: 100%;
+      height: 30px;
+      margin: 0;
+      accent-color: var(--line);
+      cursor: ew-resize;
+    }
+
+    .selection-wrap {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      align-items: stretch;
+      gap: 6px;
+      margin: 7px 10px 6px;
+    }
+
+    .card-nav {
+      align-self: center;
+      width: 44px;
+      height: 52px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 28px;
+      cursor: pointer;
+    }
+
+    .selection {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr);
+      align-items: center;
+      gap: 11px;
+      margin: 0;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 7px 20px rgba(37, 35, 30, 0.08);
+      touch-action: pan-y;
+      user-select: none;
+    }
+
+    .selection > img {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+    }
+
+    .selection-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .selection-title h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .status {
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: var(--purple);
+      background: rgba(111, 74, 160, 0.12);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .selection p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .selection-hint {
+      margin: 0 16px 12px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .selection-counter {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .explore {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: calc(100% - 32px);
+      min-height: 52px;
+      margin: 0 16px calc(18px + env(safe-area-inset-bottom));
+      border: 0;
+      border-radius: 15px;
+      color: #fff;
+      background: var(--line);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 7px 18px rgba(47, 143, 140, 0.22);
+    }
+
+    .explore:active { transform: translateY(1px); }
+
+    .completion-note {
+      margin: -5px 16px 18px;
+      padding: 12px;
+      border-radius: 12px;
+      color: #184f4b;
+      background: rgba(47, 143, 140, 0.13);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .completion-note a { color: #184f4b; font-weight: 800; }
+
+    .investigation-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      background: rgba(16, 20, 19, 0.78);
+    }
+
+    .investigation-card {
+      width: min(100%, 430px);
+      max-height: 100%;
+      overflow: auto;
+      padding: 20px;
+      border-radius: 20px;
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .investigation-card h2 { margin: 5px 0 9px; font-size: 20px; }
+    .investigation-card p { font-size: 13px; line-height: 1.65; }
+
+    .investigation-icon { width: 110px; height: 110px; object-fit: contain; }
+
+    .investigation-action,
+    .answer-choice,
+    .close-investigation {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .investigation-action,
+    .answer-choice { color: white; background: var(--line); font-weight: 700; }
+
+    .answer-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
+    .close-investigation { margin-top: 10px; background: #e9e4d8; color: var(--ink); }
+    .answer-feedback { min-height: 1.5em; margin: 11px 0 0; color: #8a3040; font-weight: 700; }
+
+    [hidden] { display: none !important; }
+
+    button:focus-visible {
+      outline: 3px solid rgba(111, 74, 160, 0.45);
+      outline-offset: 2px;
+    }
+
+    @media (min-width: 431px) {
+      .app {
+        min-height: min(900px, 100dvh);
+        margin-block: 20px;
+        border-radius: 28px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="heading-small">調査端末</p>
+        <h1>D館 1F</h1>
+      </div>
+      <div class="progress" id="progress" aria-label="点検進捗 5件中0件">
+        <span>点検</span><strong id="progressCount">0/5</strong>
+      </div>
+    </header>
+
+    <p class="guide"><span aria-hidden="true">↔</span>地図か下のスライダーを左右に動かせます</p>
+
+    <section class="map-shell" aria-label="D館1階調査マップ">
+      <div class="map-viewport" id="mapViewport">
+        <div class="map-canvas">
+          <img class="floor-map" src="../Assets/maps/d-building-floor-map-with-monuments.png" alt="赤い現在地マークを除き、五つのモニュメント画像を配置したD館1階の見取り図">
+          <div class="selected-monument" data-id="w-ring" data-selected="true" style="--x:31.0%;--y:47.5%" aria-hidden="true">
+            <img src="../Assets/icons/w-ring-icon.png" alt="">
+          </div>
+          <div class="selected-monument" data-id="indoor-tree" data-selected="false" style="--x:35.9%;--y:55.9%" aria-hidden="true">
+            <img src="../Assets/icons/indoor-tree-icon.png" alt="">
+          </div>
+          <div class="selected-monument" data-id="stone-art" data-selected="false" style="--x:60.8%;--y:29.9%" aria-hidden="true">
+            <img src="../Assets/icons/stone-art-icon.png" alt="">
+          </div>
+          <div class="selected-monument" data-id="three-kirie-panels" data-selected="false" style="--x:65.6%;--y:29.9%" aria-hidden="true">
+            <img src="../Assets/icons/three-kirie-panels-icon.png" alt="">
+          </div>
+          <div class="selected-monument" data-id="running-person" data-selected="false" style="--x:72.5%;--y:41.3%" aria-hidden="true">
+            <img src="../Assets/icons/running-person-icon.png" alt="">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="map-slider-wrap">
+      <label for="mapSlider">地図を動かす</label>
+      <input id="mapSlider" type="range" min="0" max="100" value="0" aria-label="地図を左右に動かす">
+    </div>
+
+    <div class="selection-wrap">
+      <button class="card-nav" id="previousLocation" type="button" aria-label="前のモニュメントを表示">‹</button>
+      <section class="selection" id="selectionCard" aria-live="polite" aria-label="選択中の調査場所">
+        <img id="selectedIcon" src="../Assets/icons/w-ring-icon.png" alt="">
+        <div>
+          <div class="selection-title">
+            <h2 id="selectedName">W 至円</h2>
+            <span class="status" id="selectionStatus">未確認</span>
+          </div>
+          <p>現地のモニュメントと記録を見比べよう</p>
+        </div>
+      </section>
+      <button class="card-nav" id="nextLocation" type="button" aria-label="次のモニュメントを表示">›</button>
+    </div>
+    <p class="selection-hint">カードを左右にスワイプして地点を切り替え　<span class="selection-counter" id="selectionCounter">1 / 5</span></p>
+
+    <button class="explore" type="button" id="exploreButton">
+      <span aria-hidden="true">⌕</span>
+      <span>この場所を調べる</span>
+    </button>
+    <div class="completion-note" id="completionNote" hidden>
+      <p>五つの地点を点検しました。怪盗の手紙を確認しよう。</p>
+      <a href="./index.html">本編に戻って手紙を読む</a>
+    </div>
+  </main>
+
+  <section class="investigation-overlay" id="investigationOverlay" hidden aria-label="選択した地点の点検">
+    <div class="investigation-card">
+      <p class="heading-small">D館 1F / 現場の点検</p>
+      <h2 id="investigationName">W 至円</h2>
+      <img class="investigation-icon" id="investigationIcon" src="../Assets/icons/w-ring-icon.png" alt="">
+      <div id="scanStep">
+        <p>Scaniverseの3D記録はまだ準備中です。9月21日の叩き台では、確認を飛ばして回答へ進めます。</p>
+        <button class="investigation-action" id="skipScanButton" type="button">3D記録をスキップして回答へ</button>
+      </div>
+      <div id="answerStep" hidden>
+        <p>このモニュメントのデータは盗まれている？　現地と照らし合わせて判断してください。</p>
+        <div class="answer-choices">
+          <button class="answer-choice" type="button" data-answer="stolen">盗難</button>
+          <button class="answer-choice" type="button" data-answer="safe">無事</button>
+        </div>
+        <p class="answer-feedback" id="answerFeedback" aria-live="polite"></p>
+      </div>
+      <button class="close-investigation" id="closeInvestigation" type="button">マップに戻る</button>
+    </div>
+  </section>
+
+  <script>
+    const locations = {
+      "w-ring": {
+        name: "W 至円",
+        icon: "../Assets/icons/w-ring-icon.png",
+        answer: "stolen",
+        x: 0.31, y: 0.475
+      },
+      "stone-art": {
+        name: "響在-高見観音",
+        icon: "../Assets/icons/stone-art-icon.png",
+        answer: "stolen",
+        x: 0.608, y: 0.299
+      },
+      "running-person": {
+        name: "Jump Up !",
+        icon: "../Assets/icons/running-person-icon.png",
+        answer: "safe",
+        x: 0.725, y: 0.413
+      },
+      "three-kirie-panels": {
+        name: "切り絵3枚",
+        icon: "../Assets/icons/three-kirie-panels-icon.png",
+        answer: "safe",
+        x: 0.656, y: 0.299
+      },
+      "indoor-tree": {
+        name: "木とベンチ",
+        icon: "../Assets/icons/indoor-tree-icon.png",
+        answer: "safe",
+        x: 0.359, y: 0.559
+      }
+    };
+
+    const viewport = document.getElementById("mapViewport");
+    const mapCanvas = viewport.firstElementChild;
+    const mapSlider = document.getElementById("mapSlider");
+    const selectedMonuments = [...document.querySelectorAll(".selected-monument")];
+    const locationOrder = ["w-ring", "indoor-tree", "stone-art", "three-kirie-panels", "running-person"];
+    const selectedIcon = document.getElementById("selectedIcon");
+    const selectedName = document.getElementById("selectedName");
+    const selectedCounter = document.getElementById("selectionCounter");
+    const selectionCard = document.getElementById("selectionCard");
+    const exploreButton = document.getElementById("exploreButton");
+    const progress = document.getElementById("progress");
+    const progressCount = document.getElementById("progressCount");
+    const selectionStatus = document.getElementById("selectionStatus");
+    const completionNote = document.getElementById("completionNote");
+    const investigationOverlay = document.getElementById("investigationOverlay");
+    const investigationName = document.getElementById("investigationName");
+    const investigationIcon = document.getElementById("investigationIcon");
+    const scanStep = document.getElementById("scanStep");
+    const answerStep = document.getElementById("answerStep");
+    const answerFeedback = document.getElementById("answerFeedback");
+    const storageKey = "d-building-investigation-v1";
+    let checkedLocations = {};
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+        checkedLocations = Object.fromEntries(
+          Object.entries(saved).filter(([id, answer]) => locations[id]?.answer === answer)
+        );
+      }
+    } catch (error) {
+      console.warn("点検記録を読み込めませんでした", error);
+    }
+    let selectedId = "w-ring";
+    let swipeStart = null;
+
+    function updateProgress() {
+      const count = Object.keys(checkedLocations).length;
+      progressCount.textContent = `${count}/5`;
+      progress.setAttribute("aria-label", `点検進捗 5件中${count}件`);
+      selectionStatus.textContent = checkedLocations[selectedId]
+        ? checkedLocations[selectedId] === "stolen" ? "盗難を確認" : "無事を確認"
+        : "未確認";
+      completionNote.hidden = count !== locationOrder.length;
+    }
+
+    function centerLocation(location, behavior = "smooth") {
+      const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const target = Math.min(maxScroll, Math.max(0, location.x * mapCanvas.offsetWidth - viewport.clientWidth / 2));
+      viewport.style.scrollBehavior = "";
+      viewport.scrollTo({ left: target, behavior });
+      mapSlider.value = maxScroll ? String(Math.round(target / maxScroll * 100)) : "0";
+    }
+
+    function selectLocation(id, behavior = "smooth") {
+      const location = locations[id];
+      if (!location) return;
+
+      selectedId = id;
+      selectedMonuments.forEach((item) => { item.dataset.selected = String(item.dataset.id === id); });
+      selectedIcon.src = location.icon;
+      selectedIcon.alt = `${location.name}のアイコン`;
+      selectedName.textContent = location.name;
+      selectedCounter.textContent = `${locationOrder.indexOf(id) + 1} / ${locationOrder.length}`;
+      exploreButton.setAttribute("aria-label", `${location.name}を調べる`);
+      updateProgress();
+      centerLocation(location, behavior);
+    }
+
+    function stepLocation(direction) {
+      const currentIndex = locationOrder.indexOf(selectedId);
+      const nextIndex = (currentIndex + direction + locationOrder.length) % locationOrder.length;
+      selectLocation(locationOrder[nextIndex]);
+    }
+
+    document.getElementById("previousLocation").addEventListener("click", () => stepLocation(-1));
+    document.getElementById("nextLocation").addEventListener("click", () => stepLocation(1));
+
+    mapSlider.addEventListener("input", () => {
+      const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      viewport.style.scrollBehavior = "auto";
+      viewport.scrollLeft = maxScroll * Number(mapSlider.value) / 100;
+    });
+    mapSlider.addEventListener("change", () => { viewport.style.scrollBehavior = ""; });
+    viewport.addEventListener("scroll", () => {
+      const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      mapSlider.value = maxScroll ? String(Math.round(viewport.scrollLeft / maxScroll * 100)) : "0";
+    });
+
+    selectionCard.addEventListener("pointerdown", (event) => {
+      swipeStart = { x: event.clientX, y: event.clientY };
+    });
+
+    selectionCard.addEventListener("pointerup", (event) => {
+      if (!swipeStart) return;
+      const dx = event.clientX - swipeStart.x;
+      const dy = event.clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.abs(dx) < 44 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      stepLocation(dx < 0 ? 1 : -1);
+    });
+
+    selectionCard.addEventListener("pointercancel", () => { swipeStart = null; });
+
+    exploreButton.addEventListener("click", () => {
+      const location = locations[selectedId];
+      investigationName.textContent = location.name;
+      investigationIcon.src = location.icon;
+      investigationIcon.alt = `${location.name}のアイコン`;
+      scanStep.hidden = false;
+      answerStep.hidden = true;
+      answerFeedback.textContent = "";
+      investigationOverlay.hidden = false;
+      document.getElementById("skipScanButton").focus();
+    });
+
+    document.getElementById("skipScanButton").addEventListener("click", () => {
+      scanStep.hidden = true;
+      answerStep.hidden = false;
+      document.querySelector(".answer-choice").focus();
+    });
+
+    document.querySelectorAll(".answer-choice").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.answer !== locations[selectedId].answer) {
+          answerFeedback.textContent = "まだ違うようです。もう一度よく見てみよう。";
+          return;
+        }
+        checkedLocations[selectedId] = button.dataset.answer;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(checkedLocations));
+          localStorage.setItem("d-building-investigation-complete", String(Object.keys(checkedLocations).length === locationOrder.length));
+        } catch (error) {
+          console.warn("点検記録を保存できませんでした", error);
+        }
+        updateProgress();
+        investigationOverlay.hidden = true;
+        exploreButton.focus();
+      });
+    });
+
+    document.getElementById("closeInvestigation").addEventListener("click", () => {
+      investigationOverlay.hidden = true;
+      exploreButton.focus();
+    });
+
+    window.addEventListener("load", () => {
+      selectLocation(selectedId, "auto");
+      updateProgress();
+    });
+  </script>
+</body>
+</html>

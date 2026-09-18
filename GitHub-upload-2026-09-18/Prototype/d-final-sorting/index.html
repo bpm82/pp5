@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>D館・最後の勝負｜盗品を見抜け</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ink: #fff8e8;
+      --paper: #f4ead2;
+      --paper-2: #dfcfaa;
+      --night: #071219;
+      --green: #153c36;
+      --green-2: #255b50;
+      --wine: #7a3040;
+      --wine-2: #a14b5e;
+      --gold: #d9aa4f;
+      --cyan: #5ee3e4;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--night);
+    }
+
+    body > video,
+    .a-canvas {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover !important;
+    }
+
+    body > video { z-index: 0 !important; }
+    .a-canvas { z-index: 1 !important; }
+
+    button { font: inherit; }
+    button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+    }
+
+    .scan-screen {
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(3, 8, 12, .25), rgba(3, 8, 12, .06) 45%, rgba(3, 8, 12, .52));
+    }
+
+    .scan-card {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      width: min(calc(100% - 24px), 430px);
+      padding: 16px 18px;
+      transform: translateX(-50%);
+      color: var(--ink);
+      background: rgba(7, 17, 23, .86);
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 18px;
+      text-align: center;
+      box-shadow: 0 15px 42px rgba(0, 0, 0, .32);
+      backdrop-filter: blur(9px);
+    }
+
+    .scan-frame {
+      position: absolute;
+      inset: 25% 11% 23%;
+      border: 2px solid rgba(255, 248, 232, .78);
+      border-radius: 24px;
+      box-shadow: 0 0 0 999px rgba(3, 8, 12, .12), inset 0 0 28px rgba(94, 227, 228, .1);
+    }
+
+    .scan-frame::before,
+    .scan-frame::after {
+      content: "";
+      position: absolute;
+      left: 9%;
+      right: 9%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 12px var(--cyan);
+      animation: scan 2.3s ease-in-out infinite alternate;
+    }
+
+    .scan-frame::after { animation-delay: -1.15s; opacity: .36; }
+
+    @keyframes scan {
+      from { top: 12%; }
+      to { top: 86%; }
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: #f2c66a;
+      font-size: .74rem;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
+    h1,
+    h2,
+    p { margin-top: 0; }
+
+    h1 { margin-bottom: 7px; font-size: 1.18rem; }
+    h2 { margin-bottom: 10px; }
+
+    .scan-card p:last-child {
+      margin-bottom: 0;
+      font-size: .9rem;
+      line-height: 1.55;
+    }
+
+    .panel-screen,
+    .game-screen {
+      padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(circle at 50% 0%, rgba(94, 227, 228, .13), transparent 35%),
+        linear-gradient(180deg, #0d2630, #071219 58%, #050b0f);
+    }
+
+    .panel-screen {
+      display: grid;
+      place-items: center;
+      overflow: auto;
+    }
+
+    .briefing-card,
+    .result-card {
+      width: min(100%, 430px);
+      padding: 22px 18px;
+      color: #2c2522;
+      background: linear-gradient(180deg, #fff9e9, var(--paper));
+      border: 3px double #9e7833;
+      border-radius: 22px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .45);
+      text-align: center;
+    }
+
+    .briefing-card .eyebrow,
+    .result-card .eyebrow { color: var(--wine); }
+
+    .detected-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      padding: 7px 11px;
+      color: #12362f;
+      background: #d9eee6;
+      border: 1px solid #91b9ab;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 850;
+    }
+
+    .detected-badge::before {
+      content: "✓";
+      display: grid;
+      width: 20px;
+      height: 20px;
+      place-items: center;
+      color: white;
+      background: var(--green-2);
+      border-radius: 50%;
+    }
+
+    .rule-list {
+      margin: 16px 0;
+      padding: 0;
+      list-style: none;
+      text-align: left;
+    }
+
+    .rule-list li {
+      position: relative;
+      margin: 9px 0;
+      padding-left: 31px;
+      line-height: 1.5;
+    }
+
+    .rule-list li::before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      width: 23px;
+      height: 23px;
+      place-items: center;
+      color: white;
+      background: var(--wine);
+      border-radius: 50%;
+      font-size: .76rem;
+      font-weight: 900;
+    }
+
+    .rule-list li:nth-child(1)::before { content: "1"; }
+    .rule-list li:nth-child(2)::before { content: "2"; }
+    .rule-list li:nth-child(3)::before { content: "3"; }
+
+    .fake-example {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin: 15px 0;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #172b3c;
+      border: 1px solid rgba(94, 227, 228, .4);
+      border-radius: 15px;
+      text-align: left;
+    }
+
+    .fake-example img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(63, 210, 255, .45));
+    }
+
+    .fake-example strong { color: #94f1f1; }
+    .fake-example p { margin: 3px 0 0; font-size: .82rem; line-height: 1.42; }
+
+    .primary-button,
+    .secondary-button,
+    .sort-button,
+    .debug-button,
+    .skip-ar-button {
+      border: 0;
+      cursor: pointer;
+      font-weight: 900;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .primary-button,
+    .secondary-button {
+      width: 100%;
+      min-height: 52px;
+      padding: 13px 16px;
+      border-radius: 13px;
+    }
+
+    .primary-button {
+      color: white;
+      background: linear-gradient(180deg, var(--wine-2), var(--wine));
+      box-shadow: 0 7px 0 #50202b, 0 13px 25px rgba(80, 32, 43, .24);
+    }
+
+    .primary-button:active { transform: translateY(4px); box-shadow: 0 3px 0 #50202b; }
+
+    .secondary-button {
+      margin-top: 11px;
+      color: var(--green);
+      background: transparent;
+      border: 2px solid rgba(21, 60, 54, .45);
+    }
+
+    .game-screen {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      gap: 10px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      max-width: 500px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: rgba(7, 17, 23, .82);
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: 16px;
+    }
+
+    .hud-value { display: block; font-size: 1.35rem; font-weight: 950; line-height: 1; }
+    .hud-label { display: block; margin-top: 3px; color: #b9c9ca; font-size: .65rem; font-weight: 800; }
+    .hud-score { text-align: right; }
+
+    .timer-ring {
+      position: relative;
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      background: conic-gradient(var(--gold) var(--timer-progress, 100%), rgba(255, 255, 255, .14) 0);
+      border-radius: 50%;
+    }
+
+    .timer-ring::after {
+      content: "";
+      width: 44px;
+      height: 44px;
+      background: #102029;
+      border-radius: 50%;
+    }
+
+    .timer-number {
+      position: absolute;
+      z-index: 1;
+      font-size: 1.05rem;
+      font-weight: 950;
+    }
+
+    .playfield {
+      position: relative;
+      width: min(100%, 500px);
+      min-height: 250px;
+      margin: 0 auto;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, transparent 49.7%, rgba(255, 255, 255, .1) 50%, transparent 50.3%),
+        radial-gradient(circle at 50% 38%, rgba(217, 170, 79, .13), transparent 45%);
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 20px;
+    }
+
+    .playfield::before {
+      content: "落ちてくる物を見極めろ";
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 248, 232, .53);
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      white-space: nowrap;
+    }
+
+    .falling-card {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: clamp(104px, 31vw, 148px);
+      aspect-ratio: 1;
+      transform: translate(-50%, -112%);
+      transform-origin: center;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 12px 15px rgba(0, 0, 0, .32));
+      pointer-events: none;
+    }
+
+    .falling-card.is-fake {
+      width: clamp(112px, 34vw, 158px);
+      filter: drop-shadow(0 0 15px rgba(80, 219, 255, .38));
+    }
+
+    .feedback {
+      min-height: 2.1em;
+      margin: 0;
+      color: var(--ink);
+      font-size: .88rem;
+      font-weight: 850;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .feedback.good { color: #83ead1; }
+    .feedback.bad { color: #ff93a4; }
+    .feedback.fake { color: #8beaf0; }
+
+    .sort-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+      width: min(100%, 500px);
+      margin: 0 auto;
+    }
+
+    .sort-button {
+      position: relative;
+      min-height: 82px;
+      padding: 12px 8px;
+      color: white;
+      border: 2px solid rgba(255, 255, 255, .2);
+      border-radius: 18px;
+      box-shadow: 0 8px 0 rgba(0, 0, 0, .28);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      touch-action: manipulation;
+    }
+
+    .sort-button span { display: block; font-size: 1.28rem; }
+    .sort-button small { display: block; margin-top: 3px; opacity: .82; font-size: .72rem; }
+    .sort-button:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0, 0, 0, .28); }
+    .sort-button:disabled { opacity: .5; cursor: default; }
+    .sort-stolen { background: linear-gradient(180deg, #a4495c, #702b3a); }
+    .sort-safe { background: linear-gradient(180deg, #347667, #1b4b42); }
+
+    .ignore-hint {
+      margin: -2px auto 0;
+      color: #a9c3c4;
+      font-size: .72rem;
+      text-align: center;
+    }
+
+    .countdown {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: rgba(4, 10, 14, .76);
+      font-size: clamp(4rem, 25vw, 8rem);
+      font-weight: 950;
+      text-shadow: 0 0 25px rgba(217, 170, 79, .55);
+    }
+
+    .result-screen { z-index: 50; }
+    .result-score { margin: 3px 0 14px; color: var(--wine); font-size: 2.6rem; font-weight: 950; }
+    .result-card p { line-height: 1.65; }
+
+    .debug-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      padding: 8px 10px;
+      color: white;
+      background: rgba(122, 48, 64, .92);
+      border-radius: 9px;
+      font-size: .72rem;
+    }
+
+    .skip-ar-button {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      z-index: 30;
+      width: min(calc(100% - 24px), 430px);
+      padding: 13px 16px;
+      transform: translateX(-50%);
+      color: var(--ink);
+      background: rgba(122, 48, 64, .96);
+      border: 1px solid var(--gold);
+      border-radius: 11px;
+      font-size: .9rem;
+    }
+
+    @media (max-height: 700px) {
+      .panel-screen { place-items: start center; }
+      .briefing-card { padding: 15px; }
+      .rule-list { margin: 10px 0; }
+      .rule-list li { margin: 6px 0; font-size: .88rem; }
+      .fake-example { margin: 10px 0; grid-template-columns: 64px 1fr; }
+      .fake-example img { width: 58px; height: 58px; }
+      .game-screen { gap: 7px; }
+      .hud { padding: 7px 10px; }
+      .timer-ring { width: 46px; height: 46px; }
+      .timer-ring::after { width: 37px; height: 37px; }
+      .sort-button { min-height: 69px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scan-frame::before,
+      .scan-frame::after { animation: none; top: 50%; }
+    }
+  </style>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+  <section class="screen scan-screen" id="scanScreen" aria-live="polite">
+    <div class="scan-card">
+      <p class="eyebrow">D BUILDING / FINAL SIGNAL</p>
+      <h1>D館の看板を映してください</h1>
+      <p>看板全体が枠の中に入るよう、スマートフォンをゆっくり動かします。</p>
+      <p>読み取れない場合も、下のボタンから最後の勝負に進めます。</p>
+    </div>
+    <div class="scan-frame" aria-hidden="true"></div>
+  </section>
+
+  <section class="screen panel-screen" id="briefingScreen" hidden>
+    <article class="briefing-card">
+      <div class="detected-badge" id="detectedBadge">D館の看板を認識しました</div>
+      <p class="eyebrow">FINAL GAME</p>
+      <h2>盗品を見抜け</h2>
+      <p>怪盗が投げ込むデータを、D館で行った調査を思い出して仕分けよう。</p>
+      <ol class="rule-list">
+        <li>D館のオブジェは「盗難」か「無事」を押す</li>
+        <li>正解で＋1点、間違い・見逃しで−1点</li>
+        <li>60秒で15点以上取れば勝利</li>
+      </ol>
+      <div class="fake-example">
+        <img src="./assets/phantom-thief-data-block.png" alt="怪盗の四角いデータブロック">
+        <div>
+          <strong>これはフェイク</strong>
+          <p>怪盗の四角い物体は、どちらも押さずに画面外へ見送ろう。</p>
+        </div>
+      </div>
+      <button class="primary-button" id="startButton" type="button">最後の勝負を始める</button>
+    </article>
+  </section>
+
+  <main class="screen game-screen" id="gameScreen" hidden>
+    <header class="hud">
+      <div>
+        <span class="hud-value"><span id="targetScore">15</span>点</span>
+        <span class="hud-label">クリア目標</span>
+      </div>
+      <div class="timer-ring" id="timerRing">
+        <span class="timer-number" id="timerNumber">60</span>
+      </div>
+      <div class="hud-score">
+        <span class="hud-value" id="scoreValue">0</span>
+        <span class="hud-label">現在の得点</span>
+      </div>
+    </header>
+
+    <section class="playfield" id="playfield" aria-label="落下する仕分け対象">
+      <img class="falling-card" id="fallingCard" alt="">
+    </section>
+
+    <p class="feedback" id="feedback" aria-live="polite">絵を見て、下のボタンで仕分けよう</p>
+
+    <section>
+      <div class="sort-controls">
+        <button class="sort-button sort-stolen" id="stolenButton" type="button">
+          <span>盗難</span>
+          <small>盗まれていた</small>
+        </button>
+        <button class="sort-button sort-safe" id="safeButton" type="button">
+          <span>無事</span>
+          <small>盗まれていない</small>
+        </button>
+      </div>
+      <p class="ignore-hint">四角いフェイクは、どちらも押さずに見送る</p>
+    </section>
+  </main>
+
+  <div class="countdown" id="countdown" hidden aria-live="assertive">3</div>
+
+  <section class="screen panel-screen result-screen" id="resultScreen" hidden aria-live="polite">
+    <article class="result-card">
+      <p class="eyebrow" id="resultEyebrow">RESULT</p>
+      <h2 id="resultTitle">結果</h2>
+      <div class="result-score"><span id="finalScore">0</span>点</div>
+      <p id="resultMessage"></p>
+      <button class="primary-button" id="retryButton" type="button">もう一度挑戦する</button>
+      <button class="secondary-button" id="backButton" type="button" hidden>本編に戻る</button>
+    </article>
+  </section>
+
+  <button class="skip-ar-button" id="skipArButton" type="button">読み取りをスキップして説明へ</button>
+  <button class="debug-button" id="debugButton" type="button" hidden>認識を省略</button>
+
+  <a-scene
+    id="arScene"
+    mindar-image="imageTargetSrc: ./targets/d-center.mind; autoStart: false; maxTrack: 1; warmupTolerance: 1; missTolerance: 10; filterMinCF: 0.001; filterBeta: 1000; uiScanning: true; uiLoading: true;"
+    color-space="sRGB"
+    renderer="colorManagement: true; alpha: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-entity id="dTarget" mindar-image-target="targetIndex: 0"></a-entity>
+  </a-scene>
+
+  <script>
+    const GAME_SECONDS = 60;
+    const CLEAR_SCORE = 15;
+    const SUCCESS_KEY = "d-final-sorting-success";
+
+    const ITEMS = [
+      { id: "w-ring", name: "W 至円", src: "./assets/w-ring-icon.png", answer: "stolen" },
+      { id: "stone-art", name: "響在-高見観音", src: "./assets/stone-art-icon.png", answer: "stolen" },
+      { id: "running-person", name: "Jump Up !", src: "./assets/running-person-icon.png", answer: "safe" },
+      { id: "kirie-panels", name: "切り絵3枚", src: "./assets/three-kirie-panels-icon.png", answer: "safe" },
+      { id: "indoor-tree", name: "木とベンチ", src: "./assets/indoor-tree-icon.png", answer: "safe" },
+      { id: "fake-block", name: "怪盗のフェイク", src: "./assets/phantom-thief-data-block.png", answer: "fake" }
+    ];
+
+    const scanScreen = document.getElementById("scanScreen");
+    const briefingScreen = document.getElementById("briefingScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const countdown = document.getElementById("countdown");
+    const startButton = document.getElementById("startButton");
+    const retryButton = document.getElementById("retryButton");
+    const backButton = document.getElementById("backButton");
+    const skipArButton = document.getElementById("skipArButton");
+    const detectedBadge = document.getElementById("detectedBadge");
+    const debugButton = document.getElementById("debugButton");
+    const playfield = document.getElementById("playfield");
+    const fallingCard = document.getElementById("fallingCard");
+    const stolenButton = document.getElementById("stolenButton");
+    const safeButton = document.getElementById("safeButton");
+    const feedback = document.getElementById("feedback");
+    const scoreValue = document.getElementById("scoreValue");
+    const timerNumber = document.getElementById("timerNumber");
+    const timerRing = document.getElementById("timerRing");
+    const finalScore = document.getElementById("finalScore");
+    const resultEyebrow = document.getElementById("resultEyebrow");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultMessage = document.getElementById("resultMessage");
+    const dTarget = document.getElementById("dTarget");
+    const arScene = document.getElementById("arScene");
+
+    let unlocked = false;
+    let starting = false;
+    let running = false;
+    let score = 0;
+    let currentItem = null;
+    let itemStart = 0;
+    let itemDuration = 2600;
+    let gameStartedAt = 0;
+    let gameEndsAt = 0;
+    let animationFrame = 0;
+    let nextItemTimer = 0;
+    let itemBag = [];
+    let pausedAt = 0;
+
+    function showOnly(screen) {
+      [scanScreen, briefingScreen, gameScreen, resultScreen].forEach(element => {
+        element.hidden = element !== screen;
+      });
+    }
+
+    function hideArSurface() {
+      arScene.style.display = "none";
+      document.querySelectorAll("body > video").forEach(video => {
+        video.pause?.();
+        video.srcObject?.getTracks?.().forEach(track => track.stop());
+        video.style.display = "none";
+      });
+    }
+
+    async function stopAr() {
+      try {
+        await arScene.systems?.["mindar-image-system"]?.stop?.();
+      } catch (error) {
+        console.warn("MindAR stop failed", error);
+      }
+      hideArSurface();
+    }
+
+    function unlockFinalGame(skipped = false) {
+      if (unlocked) return;
+      unlocked = true;
+      skipArButton.hidden = true;
+      debugButton.hidden = true;
+      detectedBadge.textContent = skipped
+        ? "読み取りをスキップして続行中"
+        : "D館の看板を認識しました";
+      showOnly(briefingScreen);
+      stopAr();
+      if (navigator.vibrate) navigator.vibrate([45, 35, 65]);
+    }
+
+    function shuffle(values) {
+      const copy = [...values];
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function nextFromBag() {
+      if (itemBag.length === 0) itemBag = shuffle(ITEMS);
+      return itemBag.pop();
+    }
+
+    function setControlsEnabled(enabled) {
+      stolenButton.disabled = !enabled;
+      safeButton.disabled = !enabled;
+    }
+
+    function setFeedback(message, kind = "") {
+      feedback.textContent = message;
+      feedback.className = `feedback ${kind}`.trim();
+    }
+
+    function updateScore(delta) {
+      score = Math.max(0, score + delta);
+      scoreValue.textContent = String(score);
+    }
+
+    function resetCardTransform() {
+      fallingCard.style.opacity = "1";
+      fallingCard.style.transform = "translate(-50%, -112%) scale(1) rotate(0deg)";
+    }
+
+    function spawnItem(now = performance.now()) {
+      if (!running) return;
+      currentItem = nextFromBag();
+      itemStart = now;
+      const progress = Math.min(1, Math.max(0, (Date.now() - gameStartedAt) / (GAME_SECONDS * 1000)));
+      itemDuration = 2850 - progress * 1200;
+
+      fallingCard.src = currentItem.src;
+      fallingCard.alt = currentItem.name;
+      fallingCard.classList.toggle("is-fake", currentItem.answer === "fake");
+      fallingCard.hidden = false;
+      resetCardTransform();
+      setControlsEnabled(true);
+    }
+
+    function scheduleNext(delay = 420) {
+      clearTimeout(nextItemTimer);
+      nextItemTimer = window.setTimeout(() => spawnItem(performance.now()), delay);
+    }
+
+    function dismissCurrent(direction = 0) {
+      if (!currentItem) return;
+      const x = direction < 0 ? "-145%" : direction > 0 ? "45%" : "-50%";
+      fallingCard.style.transform = `translate(${x}, 72vh) scale(.66) rotate(${direction * 18}deg)`;
+      fallingCard.style.opacity = ".12";
+      currentItem = null;
+      setControlsEnabled(false);
+      scheduleNext();
+    }
+
+    function classify(choice) {
+      if (!running || !currentItem) return;
+
+      const item = currentItem;
+      const direction = choice === "stolen" ? -1 : 1;
+
+      if (item.answer === "fake") {
+        updateScore(-1);
+        setFeedback("フェイクだ！ 四角い物体は押さずに見送ろう（−1）", "bad");
+        if (navigator.vibrate) navigator.vibrate(55);
+        dismissCurrent(direction);
+        return;
+      }
+
+      if (choice === item.answer) {
+        updateScore(1);
+        setFeedback("正解！ ＋1点", "good");
+        if (navigator.vibrate) navigator.vibrate(28);
+      } else {
+        updateScore(-1);
+        setFeedback("仕分けが違う！ −1点", "bad");
+        if (navigator.vibrate) navigator.vibrate(55);
+      }
+
+      dismissCurrent(direction);
+    }
+
+    function missCurrent() {
+      if (!currentItem) return;
+      const item = currentItem;
+
+      if (item.answer === "fake") {
+        setFeedback("フェイクを見送った。得点はそのまま", "fake");
+      } else {
+        updateScore(-1);
+        setFeedback("D館のオブジェを見逃した（−1）", "bad");
+        if (navigator.vibrate) navigator.vibrate(40);
+      }
+
+      fallingCard.style.opacity = "0";
+      currentItem = null;
+      setControlsEnabled(false);
+      scheduleNext(300);
+    }
+
+    function updateFrame(now) {
+      if (!running) return;
+
+      const remainingMs = Math.max(0, gameEndsAt - Date.now());
+      const seconds = Math.ceil(remainingMs / 1000);
+      timerNumber.textContent = String(seconds);
+      timerRing.style.setProperty("--timer-progress", `${(remainingMs / (GAME_SECONDS * 1000)) * 100}%`);
+
+      if (remainingMs <= 0) {
+        finishGame();
+        return;
+      }
+
+      if (currentItem) {
+        const progress = Math.min(1, (now - itemStart) / itemDuration);
+        const fieldHeight = playfield.clientHeight;
+        const y = -fallingCard.clientHeight + progress * (fieldHeight + fallingCard.clientHeight + 12);
+        const sway = Math.sin(progress * Math.PI * 2) * 7;
+        const tilt = Math.sin(progress * Math.PI * 1.5) * 4;
+        fallingCard.style.transform = `translate(calc(-50% + ${sway}px), ${y}px) rotate(${tilt}deg)`;
+        if (progress >= 1) missCurrent();
+      }
+
+      animationFrame = requestAnimationFrame(updateFrame);
+    }
+
+    async function runCountdown() {
+      countdown.hidden = false;
+      for (const value of [3, 2, 1]) {
+        countdown.textContent = String(value);
+        if (navigator.vibrate) navigator.vibrate(20);
+        await new Promise(resolve => setTimeout(resolve, 650));
+      }
+      countdown.textContent = "開始！";
+      await new Promise(resolve => setTimeout(resolve, 420));
+      countdown.hidden = true;
+    }
+
+    async function startGame() {
+      if (starting || running) return;
+      starting = true;
+      clearTimeout(nextItemTimer);
+      cancelAnimationFrame(animationFrame);
+      score = 0;
+      currentItem = null;
+      itemBag = [];
+      scoreValue.textContent = "0";
+      timerNumber.textContent = String(GAME_SECONDS);
+      timerRing.style.setProperty("--timer-progress", "100%");
+      fallingCard.hidden = true;
+      setControlsEnabled(false);
+      setFeedback("準備中…");
+      showOnly(gameScreen);
+      await runCountdown();
+
+      starting = false;
+      running = true;
+      gameStartedAt = Date.now();
+      gameEndsAt = gameStartedAt + GAME_SECONDS * 1000;
+      setFeedback("絵を見て、下のボタンで仕分けよう");
+      spawnItem(performance.now());
+      animationFrame = requestAnimationFrame(updateFrame);
+    }
+
+    function finishGame() {
+      if (!running) return;
+      running = false;
+      starting = false;
+      clearTimeout(nextItemTimer);
+      cancelAnimationFrame(animationFrame);
+      currentItem = null;
+      setControlsEnabled(false);
+      finalScore.textContent = String(score);
+
+      const cleared = score >= CLEAR_SCORE;
+      if (cleared) {
+        localStorage.setItem(SUCCESS_KEY, "true");
+        resultEyebrow.textContent = "FINAL GAME CLEAR";
+        resultTitle.textContent = "怪盗との勝負に勝った！";
+        resultMessage.innerHTML = "探偵が逃げ道を押さえ、警察へ連絡した。<br>これでD館のデータを元に戻せる。";
+        retryButton.hidden = true;
+        backButton.hidden = false;
+        if (navigator.vibrate) navigator.vibrate([70, 40, 110]);
+      } else {
+        resultEyebrow.textContent = "TRY AGAIN";
+        resultTitle.textContent = "あと少し！";
+        const needed = CLEAR_SCORE - score;
+        resultMessage.textContent = `クリアまであと${needed}点。四角いフェイクを見送り、D館のオブジェだけを仕分けよう。`;
+        retryButton.hidden = false;
+        backButton.hidden = true;
+      }
+
+      showOnly(resultScreen);
+    }
+
+    function handleVisibilityChange() {
+      if (!running) return;
+      if (document.hidden) {
+        pausedAt = Date.now();
+        cancelAnimationFrame(animationFrame);
+        return;
+      }
+      if (pausedAt) {
+        const pausedFor = Date.now() - pausedAt;
+        gameStartedAt += pausedFor;
+        gameEndsAt += pausedFor;
+        itemStart += pausedFor;
+        pausedAt = 0;
+      }
+      animationFrame = requestAnimationFrame(updateFrame);
+    }
+
+    stolenButton.addEventListener("click", () => classify("stolen"));
+    safeButton.addEventListener("click", () => classify("safe"));
+    startButton.addEventListener("click", startGame);
+    retryButton.addEventListener("click", startGame);
+    backButton.addEventListener("click", () => { location.href = "../index.html"; });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    dTarget.addEventListener("targetFound", () => unlockFinalGame(false));
+    skipArButton.addEventListener("click", () => unlockFinalGame(true));
+
+    const urlParams = new URLSearchParams(location.search);
+    const debugMode = urlParams.get("debug") === "1";
+    const gameOnlyMode = urlParams.get("game") === "1" || location.protocol === "file:";
+
+    function startAr() {
+      if (unlocked) return;
+      arScene.systems?.["mindar-image-system"]?.start?.();
+    }
+
+    if (gameOnlyMode) {
+      window.setTimeout(() => unlockFinalGame(true), 0);
+    } else if (arScene.hasLoaded) {
+      startAr();
+    } else {
+      arScene.addEventListener("loaded", startAr, { once: true });
+    }
+
+    if (debugMode) {
+      debugButton.hidden = false;
+      debugButton.addEventListener("click", () => unlockFinalGame(true));
+      window.__dFinalGame = {
+        unlock: unlockFinalGame,
+        start: startGame,
+        finish: finishGame,
+        choose: classify,
+        getState: () => ({ running, score, item: currentItem?.id || null })
+      };
+    }
+  </script>
+</body>
+</html>
