@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101b33">
+  <title>怪盗からの挑戦状 ―バーチャルD館盗難事件―</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; color: #f9f4e8; background: radial-gradient(circle at 78% 5%, #334664 0, transparent 34%), linear-gradient(155deg, #101b33, #16233b 52%, #0c1427); }
+    button, a { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(100%, 620px); min-height: 100dvh; margin: auto; display: flex; flex-direction: column; padding: max(18px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)); }
+    .topbar { display: flex; align-items: center; gap: 10px; }
+    .brand { flex: 1; min-width: 0; font-size: .8rem; letter-spacing: .12em; font-weight: 800; color: #e7ca87; }
+    .icon-button { border: 1px solid #72819a; color: #fff4d6; background: #233552; border-radius: 14px; min-height: 42px; padding: 7px 12px; white-space: nowrap; }
+    .progress { margin: 15px 0 9px; display: flex; align-items: center; gap: 10px; color: #cbd5e7; font-size: .81rem; }
+    .progress-track { height: 6px; border-radius: 999px; flex: 1; background: #52617a; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #d9aa56, #ffdf8d); transition: width .2s; }
+    .scene { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px 0; }
+    .eyebrow { color: #f2c76f; font-size: .76rem; font-weight: 800; letter-spacing: .16em; margin: 0 0 10px; }
+    h1, h2, p { margin-top: 0; }
+    h1 { font-size: clamp(2rem, 8vw, 3.2rem); line-height: 1.22; letter-spacing: .02em; margin-bottom: 14px; }
+    h2 { font-size: 1.55rem; line-height: 1.36; margin-bottom: 14px; }
+    p { line-height: 1.75; }
+    .lead { color: #d7e0ee; font-size: 1rem; }
+    .card { position: relative; background: linear-gradient(145deg, rgba(44,61,91,.97), rgba(26,39,64,.98)); border: 1px solid #8290a5; border-radius: 23px; padding: 22px; box-shadow: 0 18px 35px #050d1a99; }
+    .card + .card { margin-top: 13px; }
+    .card p:last-child { margin-bottom: 0; }
+    .character { min-height: 205px; display: flex; align-items: flex-end; justify-content: center; margin: 0 0 -20px; overflow: hidden; }
+    .character img { max-width: 69%; max-height: 260px; object-fit: contain; filter: drop-shadow(0 12px 12px #060c19); }
+    .is-novel { background: #0b1722; }
+    .is-novel .shell { width: 100%; padding: 0; }
+    .is-novel .topbar, .is-novel .progress, .is-novel .footer { display: none; }
+    .is-novel .scene { width: min(100%, 620px); min-height: 100dvh; margin: auto; padding: 0; }
+    .story-dialogue { position: relative; isolation: isolate; width: 100%; min-height: 100dvh; overflow: hidden; background: linear-gradient(180deg, #122c3d52, #0b192a94), url("../Assets/ui/opening-campus-background.png") center / cover no-repeat; }
+    .story-dialogue::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, #06162420 0%, #07152300 39%, #0914217d 64%, #07101cf2 100%); pointer-events: none; }
+    .story-dialogue::after { content: ""; position: absolute; z-index: 2; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #b98845, #f2d69b 43%, #81633f); box-shadow: 0 2px 12px #07101c91; }
+    .story-portrait { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; }
+    .story-portrait img { display: block; width: auto; max-width: none; height: clamp(1000px, 128dvh, 1250px); margin-top: clamp(20px, 5dvh, 52px); filter: drop-shadow(0 16px 20px #07101cba); transition: filter .25s ease, opacity .25s ease; }
+    .story-dialogue.is-player-speaking .story-portrait img { filter: brightness(.48) saturate(.7) drop-shadow(0 16px 20px #07101cba); opacity: .82; }
+    .story-dialogue.is-suspect .story-portrait img { transform: translateX(-11%); filter: brightness(.63) saturate(.68) drop-shadow(0 16px 20px #07101cba); }
+    .suspect-vision { position: absolute; z-index: 2; top: 9%; right: -18%; width: 74%; height: 64%; display: flex; justify-content: center; pointer-events: none; background: radial-gradient(ellipse at 46% 42%, #9e7dcf75 0, #6550925c 27%, transparent 69%); }
+    .suspect-vision img { width: auto; height: 100%; opacity: .82; filter: brightness(0) saturate(100%) invert(25%) sepia(19%) saturate(1500%) hue-rotate(219deg) brightness(92%) drop-shadow(0 0 11px #c5a9f0); }
+    .story-dialogue .story-eyebrow { position: absolute; z-index: 2; top: max(25px, env(safe-area-inset-top)); left: 23px; margin: 0; color: #ffe3a5; font-size: .69rem; letter-spacing: .17em; text-shadow: 0 2px 8px #061322; }
+    .story-dialogue .story-card { position: absolute; z-index: 3; right: 0; bottom: max(24px, env(safe-area-inset-bottom)); left: 0; padding: 20px clamp(24px, 6vw, 40px) 12px; }
+    .story-dialogue .story-card .speaker { display: inline-block; margin: 0 0 14px; padding: 0 0 7px; border-bottom: 2px solid #e4bb74; border-radius: 0; background: transparent; color: #ffe2a7; font-size: .9rem; letter-spacing: .18em; text-shadow: 0 2px 7px #030c13; }
+    .story-dialogue .story-card .dialogue { min-height: 0; margin-bottom: 0; color: #fffaf0; font-size: clamp(1.08rem, 4.5vw, 1.28rem); font-weight: 700; line-height: 1.7; letter-spacing: .015em; text-shadow: 0 2px 7px #020a11, 0 0 12px #071521; }
+    .story-dialogue .story-card .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+    .story-dialogue .story-card .primary { min-height: 44px; padding: 8px 4px 8px 12px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #f9df9e; font-size: .88rem; letter-spacing: .13em; text-shadow: 0 2px 7px #040d16; }
+    .story-dialogue .story-card .primary::after { content: "◆"; display: inline-block; margin-left: .85em; font-size: .7em; vertical-align: .13em; animation: story-cue 1.5s ease-in-out infinite; }
+    .story-dialogue .story-card .primary:active { transform: none; box-shadow: none; color: #fff; }
+    .story-dialogue.is-choice .story-card .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .story-dialogue.is-choice .story-card .primary, .story-dialogue.is-choice .story-card .secondary { min-height: 52px; padding: 9px 8px; border: 1px solid #d8b778c9; border-radius: 8px; background: #162a3fd6; box-shadow: 0 5px 16px #020b1599; color: #ffebbe; font-size: .88rem; letter-spacing: .02em; text-shadow: none; }
+    .story-dialogue.is-choice .story-card .primary::after { content: none; }
+    .story-dialogue.is-choice .story-card .secondary { border-color: #9cabb3a3; background: #112235c4; color: #e0e7e8; }
+    .item-acquired-stage { position: relative; isolation: isolate; width: 100%; min-height: 100dvh; display: grid; place-items: center; overflow: hidden; padding: 48px 24px max(30px, env(safe-area-inset-bottom)); text-align: center; background: linear-gradient(180deg, #081827b5, #07111be8), url("../Assets/ui/opening-campus-background.png") center / cover no-repeat; }
+    .item-acquired-stage::before { content: ""; position: absolute; top: 16%; left: 50%; width: 330px; height: 330px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, #f1c76c52, transparent 68%); }
+    .item-acquired-content { position: relative; z-index: 2; width: min(100%, 350px); }
+    .item-acquired-art { display: block; width: min(73%, 310px); max-height: 48dvh; margin: 0 auto 20px; object-fit: contain; filter: drop-shadow(0 20px 25px #000c) drop-shadow(0 0 21px #d8b45a75); }
+    .item-acquired-label { display: block; color: #e4bf71; font-size: .68rem; font-weight: 900; letter-spacing: .2em; }
+    .item-acquired-content h2 { margin: 12px 0 8px; color: #fff7e4; font-size: 1.4rem; line-height: 1.5; }
+    .item-acquired-content p { margin: 0 auto 25px; color: #c9d7cf; font-size: .86rem; line-height: 1.7; }
+    .item-acquired-content .primary { width: min(100%, 280px); }
+
+    .is-terminal { overflow: hidden; background: radial-gradient(circle at 50% -15%, #45645142, transparent 36%), linear-gradient(180deg, #171d19, #080c0a); }
+    .is-terminal .shell { width: 100%; padding: 0; }
+    .is-terminal .topbar, .is-terminal .progress, .is-terminal .footer { display: none; }
+    .is-terminal .scene { width: min(100%, 470px); min-height: 100dvh; margin: auto; padding: max(10px, env(safe-area-inset-top)) 8px max(12px, env(safe-area-inset-bottom)); }
+    .first-terminal { --terminal-cream: #fff4d8; --terminal-soft: #becdc4; --terminal-gold: #e4ba61; --terminal-gold-hi: #ffdda0; position: relative; width: 100%; min-height: calc(100dvh - max(22px, env(safe-area-inset-top))); overflow: hidden; overflow: clip; border: 7px solid #70402a; border-radius: 28px; color: var(--terminal-cream); background: radial-gradient(circle at 78% 10%, #2f74503b, transparent 32%), linear-gradient(155deg, #11271f, #07110e 68%); box-shadow: 0 0 0 2px #dcb45e, 0 0 0 5px #271713, 0 25px 55px #000b; }
+    .first-terminal::before, .first-terminal::after { content: ""; position: absolute; z-index: 30; top: 0; width: 52px; height: 52px; border-bottom: 2px solid #f1d17c; background: linear-gradient(135deg, #f0c768, #926123 63%, #4e2e10); pointer-events: none; }
+    .first-terminal::before { left: 0; border-right: 2px solid #f1d17c; border-bottom-right-radius: 25px; }
+    .first-terminal::after { right: 0; border-left: 2px solid #f1d17c; border-bottom-left-radius: 25px; }
+    .terminal-scanlines { position: absolute; z-index: 25; inset: 0; opacity: .35; background: repeating-linear-gradient(180deg, #fff05 0, #fff05 1px, transparent 1px, transparent 5px); pointer-events: none; }
+    .first-ring { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: 73px 28px 31px; text-align: center; background: radial-gradient(circle at 50% 35%, #274a37, #07120f 70%); }
+    .first-device-label { margin-bottom: auto; color: #c7d1cb; font-size: .72rem; font-weight: 800; letter-spacing: .16em; }
+    .first-call-avatar { position: relative; width: 176px; height: 176px; margin: 32px 0 24px; overflow: hidden; border: 2px solid #e2bd6e; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #667d6e, #173326 72%); box-shadow: 0 0 0 12px #dcb65e0a, 0 0 0 26px #dcb65e05, 0 18px 48px #0008; animation: terminal-ring 1.8s ease-in-out infinite; }
+    .first-call-avatar img { position: absolute; top: -10%; left: 50%; width: auto; height: 500%; transform: translateX(-50%); filter: brightness(.92) saturate(.82); }
+    .first-ring h2 { margin: 0 0 7px; font-size: 1.66rem; letter-spacing: .08em; }
+    .first-ring p { margin: 0; color: #b9cbc0; font-size: .88rem; line-height: 1.6; }
+    .first-phone-actions { display: flex; justify-content: center; gap: 68px; width: 100%; margin-top: auto; }
+    .first-call-button { min-width: 76px; padding: 0; border: 0; color: #f4f7f5; background: transparent; cursor: pointer; }
+    .first-call-button span { display: grid; width: 62px; height: 62px; margin: 0 auto 9px; place-items: center; border-radius: 50%; color: white; font-size: 1.65rem; box-shadow: 0 8px 20px #0007; }
+    .first-call-button small { display: block; color: #e5ebe7; font-size: .72rem; }
+    .first-call-button.decline span { background: #bd4545; transform: rotate(135deg); }
+    .first-call-button.accept span { background: #4f9f62; }
+    .first-call-stage { position: absolute; inset: 0; overflow: hidden; overflow: clip; background: linear-gradient(145deg, #112e22, #07110e 64%); }
+    .first-call-status { position: absolute; z-index: 6; top: 68px; right: 20px; left: 20px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #dfeae4; font-size: .7rem; font-weight: 800; letter-spacing: .1em; }
+    .first-call-status i { width: 7px; height: 7px; border-radius: 50%; background: #75d394; box-shadow: 0 0 10px #75d394; }
+    .first-call-status time { color: #93aa9d; font: 700 .7rem ui-monospace, monospace; }
+    .first-call-band { position: absolute; z-index: 1; top: 27%; right: -18%; width: 138%; height: 29%; transform: rotate(-7deg); border-top: 2px solid #e7bc65; border-bottom: 2px solid #a5792f; background: linear-gradient(90deg, #0d1b16, #285239 55%, #14251d); box-shadow: 0 18px 35px #0008; }
+    .first-call-detective { position: absolute; z-index: 2; top: 7%; left: 50%; width: auto; height: 126%; transform: translateX(-50%); filter: drop-shadow(-15px 18px 20px #0009); }
+    .first-call-stage.is-player .first-call-detective { opacity: .34; }
+    .first-call-frost { position: absolute; z-index: 3; right: 0; bottom: 0; left: 0; height: 42%; border-top: 1px solid #d5ad5952; background: linear-gradient(180deg, #10241db5, #06100ff2 34%); backdrop-filter: blur(12px) saturate(.7); -webkit-backdrop-filter: blur(12px) saturate(.7); box-shadow: 0 -18px 40px #06100f75; }
+    .first-call-dialogue { position: absolute; z-index: 4; right: 0; bottom: 0; left: 0; min-height: 40%; padding: 28px 22px max(21px, env(safe-area-inset-bottom)); }
+    .first-call-dialogue .speaker { margin: 0; padding: 0 0 7px; border-bottom: 2px solid var(--terminal-gold); border-radius: 0; color: var(--terminal-gold-hi); background: transparent; font-size: .76rem; letter-spacing: .16em; }
+    .first-call-dialogue .dialogue { min-height: 101px; margin: 15px 0 0; color: #fffaf0; font-size: 1.08rem; line-height: 1.72; }
+    .first-call-controls { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .first-call-controls .primary { min-height: 49px; padding: 9px 15px; border: 0; border-radius: 11px; color: #182016; background: linear-gradient(180deg, #ffe09a, #d5a64d); box-shadow: 0 4px 0 #76511d; }
+
+    .terminal-guide { position: absolute; inset: 0; display: grid; place-items: center; padding: 52px 25px max(30px, env(safe-area-inset-bottom)); text-align: center; background: radial-gradient(circle at 50% 34%, #23594887, transparent 38%), linear-gradient(180deg, #071825f0, #07120ffd), url("../Assets/ui/opening-campus-background.png") center / cover no-repeat; }
+    .terminal-guide::before { content: ""; position: absolute; inset: 0; opacity: .18; background: repeating-linear-gradient(0deg, transparent 0 5px, #b4f2d20e 6px), repeating-linear-gradient(90deg, transparent 0 31px, #8fe4c40b 32px); }
+    .terminal-guide-content { position: relative; z-index: 2; width: min(100%, 330px); }
+    .terminal-voice { display: flex; align-items: center; justify-content: center; gap: 5px; width: 88px; height: 88px; margin: 0 auto 26px; border: 1px solid #82d7b793; border-radius: 50%; background: #0b2e25b8; box-shadow: 0 0 0 12px #72d4ae0a, 0 0 32px #65d2a65c; }
+    .terminal-voice i { display: block; width: 4px; height: 19px; border-radius: 2px; background: #b5f2d8; box-shadow: 0 0 7px #76d9b5; animation: terminal-wave 1.1s ease-in-out infinite; }
+    .terminal-voice i:nth-child(2), .terminal-voice i:nth-child(4) { height: 34px; animation-delay: -.25s; }
+    .terminal-voice i:nth-child(3) { height: 48px; animation-delay: -.45s; }
+    .terminal-guide-label { display: block; color: #9ce5c9; font-size: .68rem; font-weight: 900; letter-spacing: .2em; }
+    .terminal-guide h2 { margin: 13px 0 15px; color: #fff7e4; font-size: 1.38rem; }
+    .terminal-guide p { margin: 0 auto; color: #d2e1dc; font-size: .91rem; line-height: 1.85; }
+    .terminal-guide-order { margin-top: 17px !important; padding: 13px 12px; border-top: 1px solid #90d9bc4d; border-bottom: 1px solid #90d9bc4d; color: #fff3d3 !important; font-weight: 800; }
+    .terminal-guide .primary { width: min(100%, 280px); margin-top: 30px; }
+
+    .terminal-home { position: absolute; inset: 0; display: flex; flex-direction: column; background: radial-gradient(circle at 78% 10%, #2f74503b, transparent 32%), linear-gradient(155deg, #11271f, #07110e 68%); }
+    .terminal-home-header { display: flex; justify-content: space-between; gap: 12px; padding: 63px 20px 15px; border-bottom: 1px solid #d2ae5b5e; }
+    .terminal-home-header span { display: block; color: var(--terminal-gold-hi); font-size: .68rem; font-weight: 800; letter-spacing: .16em; }
+    .terminal-home-header small { color: #9db2a6; font-size: .73rem; }
+    .terminal-home-count { color: #bfcfc5; font-size: .7rem; text-align: right; }
+    .terminal-home-count strong { display: block; margin-top: 2px; color: var(--terminal-gold-hi); font-size: 1.15rem; }
+    .terminal-home-main { flex: 1; padding: 29px 22px 18px; }
+    .terminal-home-main .eyebrow { color: var(--terminal-gold-hi); font-size: .69rem; }
+    .terminal-home-main h1 { margin: 9px 0 11px; font-size: clamp(1.75rem, 7vw, 2.15rem); line-height: 1.28; }
+    .terminal-home-main > p { margin: 0; color: var(--terminal-soft); font-size: .89rem; line-height: 1.7; }
+    .terminal-home-map { height: 195px; margin: 20px -22px 16px; overflow: hidden; border-top: 1px solid #d0ae6260; border-bottom: 1px solid #d0ae6260; background: #dbc17d0d; }
+    .terminal-home-map img { width: 145%; height: 100%; object-fit: contain; transform: translateX(-16%); filter: sepia(.7) saturate(.55) brightness(.66); opacity: .72; }
+    .terminal-home-main > .primary { width: 100%; }
+    .terminal-home-notice { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 15px; border-top: 1px solid #53695c78; }
+    .terminal-home-notice i { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: #f4c666; box-shadow: 0 0 13px #f4c666; }
+    .terminal-home-notice span { color: #d9e4dd; font-size: .8rem; }
+    .terminal-home-notice button { margin-left: auto; min-height: 40px; padding: 6px 10px; border: 1px solid #d9b561; border-radius: 8px; color: #ffe9b6; background: #5b4628; }
+    .terminal-home-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px 11px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid #c19c5360; background: #07100edb; }
+    .terminal-home-nav button { min-height: 48px; border: 0; border-radius: 8px; color: #8fa499; background: transparent; }
+    .terminal-home-nav button:first-child { color: #ffdf98; background: #d1aa5418; }
+    @keyframes story-cue { 50% { opacity: .35; transform: translateY(3px); } }
+    @keyframes terminal-ring { 50% { box-shadow: 0 0 0 20px #dcb65e06, 0 0 0 40px #dcb65e03, 0 18px 58px #cf9c3e50; } }
+    @keyframes terminal-wave { 50% { transform: scaleY(.4); opacity: .45; } }
+    @media (max-height: 700px) { .story-portrait img { margin-top: 20px; } .story-dialogue .story-card { padding-top: 12px; } .story-dialogue .story-card .dialogue { font-size: 1rem; line-height: 1.55; } }
+    @media (max-height: 730px) {
+      .first-ring { padding-top: 68px; }
+      .first-call-avatar { width: 148px; height: 148px; margin: 18px 0 16px; }
+      .first-call-detective { height: 122%; }
+      .first-call-dialogue { padding-top: 21px; }
+      .first-call-dialogue .dialogue { min-height: 80px; }
+      .terminal-home-header { padding: 55px 18px 9px; }
+      .terminal-home-main { padding: 14px 20px 9px; }
+      .terminal-home-main h1 { margin: 5px 0 6px; font-size: 1.58rem; }
+      .terminal-home-main > p { font-size: .79rem; line-height: 1.5; }
+      .terminal-home-map { height: 112px; margin: 10px -20px; }
+      .terminal-home-main > .primary { min-height: 45px; padding: 8px 12px; }
+      .terminal-home-notice { margin-top: 10px; padding-top: 8px; }
+      .terminal-home-notice button { min-height: 36px; }
+      .terminal-home-nav { padding-top: 4px; padding-bottom: max(5px, env(safe-area-inset-bottom)); }
+      .terminal-home-nav button { min-height: 42px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .story-dialogue .story-card .primary::after, .first-call-avatar, .terminal-voice i { animation: none; } }
+    .speaker { display: inline-block; color: #152033; background: #ffda8b; font-weight: 900; border-radius: 999px; padding: 4px 14px; margin-bottom: 12px; }
+    .dialogue { font-size: 1.12rem; font-weight: 700; min-height: 95px; }
+    .actions { display: grid; gap: 11px; margin-top: 19px; }
+    .primary, .secondary { border-radius: 15px; min-height: 54px; padding: 12px 16px; text-align: center; text-decoration: none; font-weight: 900; }
+    .primary { border: 1px solid #fff0bc; background: linear-gradient(180deg, #ffe39a, #e9b957); color: #182336; box-shadow: 0 5px 0 #a07632; }
+    .primary:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07632; }
+    .secondary { color: #fff2d5; background: #243854; border: 1px solid #9daac2; }
+    .primary:focus-visible, .secondary:focus-visible, .icon-button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .small { font-size: .83rem; color: #bac9da; }
+    .signal { color: #f6ce77; font-weight: 800; }
+    .error { color: #ffb2a6; font-family: ui-monospace, monospace; font-size: .92rem; border-left: 3px solid #ff8e79; padding-left: 13px; }
+    .chapter { color: #9fb4d0; font-weight: 700; margin-bottom: 5px; }
+    .grid { display: grid; gap: 13px; }
+    .mission { display: grid; grid-template-columns: 65px 1fr; gap: 13px; align-items: center; }
+    .mission img { width: 65px; height: 65px; object-fit: contain; }
+    .mission h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .mission p { margin: 0; font-size: .84rem; color: #cfdaea; }
+    .mission .actions { grid-column: 1 / -1; margin-top: 0; }
+    .badge { display: inline-block; background: #d8b66f; color: #182338; font-size: .75rem; font-weight: 900; padding: 4px 9px; border-radius: 999px; margin-top: 7px; }
+    .letter { border: 1px dashed #d5ba85; background: #eee0bf; color: #34291f; border-radius: 15px; padding: 17px; }
+    .letter p { margin-bottom: 0; }
+    .letter h3 { margin: 0 0 8px; }
+    .modal { position: fixed; inset: 0; background: #030816cf; display: grid; place-items: center; padding: 18px; z-index: 10; }
+    .modal[hidden] { display: none; }
+    .modal-panel { width: min(100%, 580px); max-height: 85dvh; overflow: auto; background: #233653; border: 1px solid #d9b770; border-radius: 22px; padding: 22px; }
+    .bag-row { display: flex; gap: 11px; align-items: center; padding: 10px 0; border-bottom: 1px solid #677b96; }
+    .bag-row img { width: 55px; height: 55px; object-fit: contain; }
+    .bag-row p { margin: 0; }
+    .history-log { overflow: hidden; margin-top: 12px; border: 1px solid #71849b; border-radius: 14px; }
+    .history-log-row { display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 14px; border-bottom: 1px solid #60738c; background: #192d49; }
+    .history-log-row:last-child { border-bottom: 0; }
+    .history-log-row.is-player { background: #2b3f5b; }
+    .history-log-row strong { color: #f4cf7c; font-size: .82rem; }
+    .history-log-row p { margin: 0; color: #f6f2e8; font-size: .9rem; line-height: 1.65; }
+    .is-terminal .modal-panel { width: min(100%, 430px); border-color: #d5b360; background: linear-gradient(145deg, #173229, #091512); box-shadow: 0 24px 65px #000c; }
+    .is-terminal .history-log { border-color: #806c42; }
+    .is-terminal .history-log-row { border-color: #655c40; background: #10231d; }
+    .is-terminal .history-log-row.is-player { background: #193127; }
+    .modal .actions { margin-top: 20px; }
+    .footer { text-align: center; color: #91a4bd; font-size: .72rem; padding: 12px 0 0; }
+    body.is-opening { background: #e9f5fb url("../Assets/ui/opening-campus-background.png") center center / cover no-repeat; }
+    .is-opening .shell { width: 100%; padding: 0; }
+    .is-opening .topbar, .is-opening .progress, .is-opening .footer { display: none; }
+    .is-opening .scene { width: min(100%, 620px); margin: 0 auto; padding: 0; }
+    .opening-layout { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: max(30px, env(safe-area-inset-top)) 16px max(26px, env(safe-area-inset-bottom)); }
+    .opening-logo { display: block; width: 100%; height: auto; margin-top: clamp(75px, 17dvh, 180px); }
+    .opening-actions { margin-top: auto; margin-bottom: clamp(54px, 9dvh, 110px); }
+    .opening-start-button { min-width: 240px; min-height: 70px; padding: 12px 27px; border: 4px solid #fffaf0; border-radius: 999px; background: linear-gradient(180deg, #88cc63, #52a64a); color: #fffdf2; font-size: 1.45rem; font-weight: 900; letter-spacing: .12em; text-shadow: 0 2px 0 #39783b; box-shadow: 0 0 0 3px #5b3d2b, 0 8px 0 #5b3d2b, 0 13px 20px #3e38245c; transition: transform .12s, box-shadow .12s; }
+    .opening-start-button span { display: inline-block; margin-left: .5em; font-size: .75em; vertical-align: .06em; }
+    .opening-start-button:active { transform: translateY(6px); box-shadow: 0 0 0 3px #5b3d2b, 0 2px 0 #5b3d2b, 0 5px 10px #3e38245c; }
+    .opening-start-button:focus-visible { outline: 3px solid #235c3b; outline-offset: 8px; }
+    @media (min-width: 560px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">MET / D館消失事件</div>
+      <button id="bagButton" class="icon-button" type="button" hidden>調査バッグ</button>
+      <button id="resetButton" class="icon-button" type="button">最初から</button>
+    </header>
+    <div class="progress"><span id="progressText">事件発生前</span><div class="progress-track"><div id="progressFill" class="progress-fill"></div></div></div>
+    <main id="scene" class="scene" aria-live="polite"></main>
+    <footer class="footer">9月21日フィードバック用試作 · 現地ARと3D記録はスキップ可能</footer>
+  </div>
+  <div class="modal" id="modal" hidden><div class="modal-panel" id="modalPanel"></div></div>
+  <script>
+    const scene = document.getElementById("scene");
+    const modal = document.getElementById("modal");
+    const modalPanel = document.getElementById("modalPanel");
+    const bagButton = document.getElementById("bagButton");
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+    const K = "d-case-";
+    const get = key => { try { return localStorage.getItem(key); } catch { return null; } };
+    const put = (key, value) => { try { localStorage.setItem(key, value); } catch { /* Private mode may refuse persistence. */ } };
+    const yes = key => get(key) === "true";
+    const mark = key => put(key, "true");
+    const before = [
+      ["システム", "エラー。四つのオブジェクトデータが見つかりません。"],
+      ["あなた", "え？　なんだ、これ？"],
+      ["探偵", "その画面、少し見せてもらえるか？"],
+      ["あなた", "え？　あなたは誰ですか？"],
+      ["探偵", "俺は、METに所属している探偵だ。仲間から『バーチャルD館で遊ぼう』のデータに異常が起きたと連絡を受けて、駆けつけた。"],
+      ["探偵", "……なんだと。四つのオブジェクトデータが盗まれている。"],
+      ["あなた", "何か心当たりがあるんですか？"],
+      ["探偵", "ああ。前にも、盗んだ物を人質にして、俺にゲームを仕掛けてきた怪盗がいる。"],
+      ["探偵", "もしかしたら、あいつかもな。"],
+      ["探偵", "もしあいつの仕業なら、今回もゲームに勝たなければ取り返せないだろう。"],
+      ["探偵", "俺一人では大学中を探せない。力を貸してくれないか？"]
+    ];
+    const after = [
+      ["あなた", "協力します。"],
+      ["探偵", "助かるよ。"],
+      ["探偵", "盗難された4つのうち、2つはD館を調べれば分かりそうだ。残りの2つは俺が別の場所を探す。"],
+      ["探偵", "離れている間は、これを受け取ってくれ。"]
+    ];
+    const firstCall = [
+      ["探偵", "聞こえるか？　通信状態は問題なさそうだな。"],
+      ["あなた", "はい、聞こえています。"]
+    ];
+    const firstBriefing = [
+      ["探偵", "よし。君はD館へ向かって、五つのオブジェを調べてくれ。"],
+      ["探偵", "何か分かったら、この端末で連絡してくれ。"],
+      ["あなた", "分かりました。"]
+    ];
+    const portrait = { "探偵": "../Assets/characters/detective-front-3x4.png", "怪盗": "../Assets/characters/phantom-thief-front-3x4.png" };
+    const safe = text => String(text).replace(/[&<>\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[ch]);
+    const button = (label, action, type = "primary") => `<button type="button" class="${type}" data-action="${action}">${label}</button>`;
+
+    function progress() {
+      const amount = (yes("d-building-investigation-complete") ? 1 : 0) + (yes("b-center-ar-success") ? 1 : 0) + (yes("g-object-ar-success") ? 1 : 0) + (yes("d-final-sorting-success") ? 1 : 0);
+      progressText.textContent = `ゲーム ${amount}/4`;
+      progressFill.style.width = `${amount * 25}%`;
+      bagButton.hidden = !yes(K + "intro-done");
+    }
+
+    function renderDialogue([speaker, line], action, label = "次へ", showDetective = true, showSuspect = false) {
+      if (speaker === "システム") {
+        scene.innerHTML = `<p class="eyebrow">THE MISSING OBJECTS / STORY</p><div class="card"><span class="speaker">${speaker}</span><p class="dialogue">${safe(line)}</p><div class="actions">${button(label, action)}</div></div>`;
+        return;
+      }
+      scene.innerHTML = `<div class="story-dialogue${speaker === "あなた" && showDetective ? " is-player-speaking" : ""}${showSuspect ? " is-suspect" : ""}"><p class="eyebrow story-eyebrow">CASE 01 / D館データ異常</p>${showDetective ? `<div class="story-portrait"><img src="${portrait["探偵"]}" alt="探偵"></div>` : ""}${showSuspect ? `<div class="suspect-vision" aria-hidden="true"><img src="../Assets/characters/phantom-thief-silhouette-left-3x4.png" alt=""></div>` : ""}<div class="story-card"><span class="speaker">${speaker}</span><p class="dialogue">${safe(line)}</p><div class="actions">${button(label, action)}</div></div></div>`;
+    }
+
+    function renderTerminalHandoff() {
+      scene.innerHTML = `<div class="item-acquired-stage"><div class="item-acquired-content"><img class="item-acquired-art" src="../Assets/ui/detective-communication-terminal.png" alt="探偵から受け取った通信端末"><span class="item-acquired-label">SYSTEM / ITEM ACQUIRED</span><h2>通信端末を手に入れた。</h2><p>探偵との連絡や、調査記録の確認に使える端末だ。</p>${button("端末を受け取る", "accept-terminal")}</div></div>`;
+    }
+
+    function terminalFrame(content, label = "通信端末") {
+      scene.innerHTML = `<section class="first-terminal" aria-label="${label}"><div class="terminal-scanlines" aria-hidden="true"></div>${content}</section>`;
+    }
+
+    function renderFirstIncoming(missed = false) {
+      terminalFrame(`<div class="first-ring"><span class="first-device-label">通信端末</span><div class="first-call-avatar"><img src="${portrait["探偵"]}" alt="探偵の顔"></div><h2>${missed ? "不在着信" : "探偵"}</h2><p>${missed ? "探偵へかけ直せます" : "音声通話の着信"}</p><div class="first-phone-actions">${missed ? "" : `<button class="first-call-button decline" type="button" data-action="decline-first-call"><span aria-hidden="true">☎</span><small>拒否</small></button>`}<button class="first-call-button accept" type="button" data-action="answer-first-call"><span aria-hidden="true">☎</span><small>${missed ? "かけ直す" : "応答"}</small></button></div></div>`, "探偵からの着信");
+    }
+
+    function renderFirstCall(index) {
+      const [speaker, line] = firstCall[Math.min(index, firstCall.length - 1)];
+      terminalFrame(`<div class="first-call-stage${speaker === "あなた" ? " is-player" : ""}"><div class="first-call-status"><i aria-hidden="true"></i><span>探偵と通話中</span><time>00:03</time></div><div class="first-call-band"></div><img class="first-call-detective" src="${portrait["探偵"]}" alt="通信中の探偵"><div class="first-call-frost" aria-hidden="true"></div><div class="first-call-dialogue"><span class="speaker">${speaker}</span><p class="dialogue">${safe(line)}</p><div class="first-call-controls">${button(index === firstCall.length - 1 ? "通話を終える" : "次へ", "first-call-next")}</div></div></div>`, "探偵との通話");
+    }
+
+    function renderTerminalGuide() {
+      terminalFrame(`<div class="terminal-guide"><div class="terminal-guide-content"><div class="terminal-voice" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><span class="terminal-guide-label">SYSTEM VOICE / GUIDE</span><h2>通信端末を開いてください。</h2><p>このゲームでは、探偵から受け取った通信端末を使って捜査を進めます。</p><p class="terminal-guide-order">まずは端末を起動し、現在の任務を確認してください。</p>${button("通信端末を開く", "open-terminal-home")}</div></div>`, "通信端末の操作案内");
+    }
+
+    function renderTerminalHome() {
+      terminalFrame(`<section class="terminal-home"><header class="terminal-home-header"><div><span>INVESTIGATION TERMINAL</span><small>探偵と接続中</small></div><div class="terminal-home-count">復元コード<strong>0 / 4</strong></div></header><div class="terminal-home-main"><span class="eyebrow">CURRENT MISSION / 01</span><h1>D館の5つを<br>調べる</h1><p>現実のD館と記録を見比べて、盗難された2つのオブジェを特定する。</p><div class="terminal-home-map"><img src="../Assets/maps/d-building-floor-map-with-monuments.png" alt="D館1階の調査地図"></div>${button("D館の調査を始める", "go-first-map")}<div class="terminal-home-notice"><i aria-hidden="true"></i><span>最初の通信を保存しました</span><button type="button" data-action="show-first-history">履歴を見る</button></div></div><nav class="terminal-home-nav" aria-label="通信端末のメニュー"><button type="button" aria-current="page">⌖<br>捜査</button><button type="button" data-action="show-first-history">⌁<br>通信</button><button type="button" data-action="show-bag">▱<br>バッグ</button></nav></section>`, "通信端末ホーム");
+    }
+
+    function renderIntro() {
+      const stage = get(K + "intro-stage") || "start";
+      const index = Number(get(K + "intro-index") || 0);
+      if (stage === "start") {
+        scene.innerHTML = `<div class="opening-layout"><img class="opening-logo" src="../Assets/ui/virtual-d-building-stroll-logo.png" alt="バーチャルD館散策"><div class="opening-actions"><button type="button" class="opening-start-button" data-action="intro-start">スタート<span aria-hidden="true">▶</span></button></div></div>`;
+      } else if (stage === "before") {
+        renderDialogue(before[Math.min(index, before.length - 1)], "intro-next", "次へ", index !== 1, index === 8 || index === 9);
+      } else if (stage === "choice") {
+      scene.innerHTML = `<div class="story-dialogue is-choice"><p class="eyebrow story-eyebrow">CASE 01 / 協力要請</p><div class="story-portrait"><img src="${portrait["探偵"]}" alt="探偵"></div><div class="story-card"><span class="speaker">探偵</span><p class="dialogue">俺一人では大学中を探せない。力を貸してくれないか？</p><div class="actions">${button("協力する", "accept")}${button("協力しない", "decline", "secondary")}</div></div></div>`;
+      } else if (stage === "declined") {
+        renderDialogue(["探偵", "そうか、無理にとは言わない。気が変わったら、もう一度声をかけてくれ。"], "back-choice", "もう一度話す");
+      } else if (stage === "after") {
+        if (index >= after.length) renderTerminalHandoff();
+        else renderDialogue(after[index], "after-next");
+      } else if (stage === "first-call-incoming") {
+        renderFirstIncoming(false);
+      } else if (stage === "first-call-missed") {
+        renderFirstIncoming(true);
+      } else if (stage === "first-call-dialogue") {
+        renderFirstCall(index);
+      } else if (stage === "first-briefing") {
+        renderDialogue(firstBriefing[Math.min(index, firstBriefing.length - 1)], "first-brief-next");
+      } else if (stage === "terminal-guide") {
+        renderTerminalGuide();
+      } else if (stage === "terminal-home") {
+        renderTerminalHome();
+      }
+    }
+
+    function renderMap() {
+      scene.innerHTML = `<p class="eyebrow">CASE 01 / D館の調査</p><h1>消えた二つを<br>見つけよう</h1><div class="card"><span class="speaker">探偵からの通信</span><p>バーチャルD館の記録と、実際のD館を見比べてくれ。五つ全部を確認して、盗まれているかどうかを報告してほしい。</p><p class="small">3D記録はまだ準備中。各地点でスキップして回答できます。</p></div><div class="actions"><a class="primary" href="./d-building-map.html">D館の調査を始める</a></div>`;
+    }
+
+    function renderMapReport() {
+      scene.innerHTML = `<p class="eyebrow">CASE 02 / 発見</p><h1>怪盗の手紙が<br>二通残されていた</h1><div class="card"><span class="speaker">探偵からの通信</span><p class="dialogue">D館の五つは、全部確認できたか？</p><div class="actions">${button("はい、全部確認しました", "report-map")}${button("まだ確認する", "revisit-map", "secondary")}</div></div>`;
+    }
+
+    function renderLetters() {
+      const w = yes(K + "read-w");
+      const g = yes(K + "read-g");
+      scene.innerHTML = `<p class="eyebrow">CASE 02 / 二通の手紙</p><h1>次の場所を<br>突き止めろ</h1><div class="card"><span class="speaker">あなた</span><p>盗まれていたのは二つです。それと、怪盗の手紙が二通残されていました。</p><span class="speaker">探偵</span><p>そうか。まずは手紙の内容を確認しよう。</p></div><div class="actions">${button(`W 至円の手紙を読む ${w ? "✓" : ""}`, "letter-w", "secondary")}${button(`響在-高見観音の手紙を読む ${g ? "✓" : ""}`, "letter-g", "secondary")}${w && g ? button("二つの回収場所へ進む", "show-recover") : ""}</div>`;
+    }
+
+    function renderRecovery() {
+      const b = yes("b-center-ar-success");
+      const g = yes("g-object-ar-success");
+      const count = Number(b) + Number(g);
+      scene.innerHTML = `<p class="eyebrow">CASE 03 / 奪還</p><h1>${count === 0 ? "二つの手がかりを追え" : "残りの手紙を追え"}</h1><div class="card"><span class="speaker">探偵からの通信</span><p>${count === 0 ? "二通の手紙が示す場所へ向かってくれ。どちらからでも構わない。" : "君の担当は、あと一つだ。もう一通の手紙が示す場所へ向かってくれ。"}</p><p class="small">現地でMindARを読み取れない場合は、各ゲームの「読み取りをスキップ」から進めます。</p></div><div class="grid two" style="margin-top:15px">
+        <div class="card mission"><img src="../Assets/icons/w-ring-icon.png" alt=""><div><h3>W 至円</h3><p>B館の看板 / 流れる文字</p>${b ? '<span class="badge">回収済み</span>' : ""}</div><div class="actions">${b ? button("手紙を読み返す", "letter-w", "secondary") : button("B館のゲームへ", "go-b")}</div></div>
+        <div class="card mission"><img src="../Assets/icons/stone-art-icon.png" alt=""><div><h3>響在-高見観音</h3><p>G館近くの彫刻 / 隠れた文字</p>${g ? '<span class="badge">回収済み</span>' : ""}</div><div class="actions">${g ? button("手紙を読み返す", "letter-g", "secondary") : button("G館のゲームへ", "go-g")}</div></div>
+      </div>`;
+    }
+
+    function nextReport() {
+      const b = yes("b-center-ar-success") && !yes(K + "reported-b");
+      const g = yes("g-object-ar-success") && !yes(K + "reported-g");
+      if (b && g) return get(K + "first-recovery") === "g" ? "g" : "b";
+      return b ? "b" : g ? "g" : null;
+    }
+
+    function renderReport(which) {
+      const first = !(yes(K + "reported-b") || yes(K + "reported-g"));
+      const other = which === "b" ? "J館" : "E館";
+      scene.innerHTML = `<p class="eyebrow">CASE 03 / 回収報告</p><h1>${which === "b" ? "W 至円" : "響在-高見観音"}を<br>取り戻した！</h1><div class="card"><span class="speaker">あなた</span><p>こちらも一つ取り戻しました。</p><span class="speaker">探偵からの通信</span><p>俺は${other}で盗品を見つけたぜ。${first ? "君の担当は、あと一つだ。もう一通の手紙が示す場所へ向かってくれ。" : "これで全部だな。"}</p><p class="signal">全体 ${first ? "2/4" : "4/4"} 回収</p><div class="actions">${button(first ? "残りの場所へ向かう" : "探偵の連絡を聞く", `report-${which}`)}</div></div>`;
+    }
+
+    function renderFinal() {
+      scene.innerHTML = `<p class="eyebrow">FINAL CASE / D館の看板</p><h1>怪盗からの<br>最後の挑戦状</h1><div class="card"><span class="speaker">怪盗</span><p>四つとも取り戻したのか。やるじゃないか。D館の看板で待っている。最後の勝負だ。</p><span class="speaker">探偵からの通信</span><p>盗品は取り戻した。だが、あいつをこのまま逃がすわけにはいかない。D館の看板で合流しよう。</p></div><div class="card"><span class="speaker">探偵</span><p>来たな。逃げ道は俺が押さえる。</p><span class="speaker">怪盗</span><p>今度は助手連れか。探偵とその助手、二人まとめて相手をしてやる。さあ、ゲームスタートだ。</p></div><div class="actions">${button("最後の勝負『盗品を見抜け』へ", "go-final")}</div>`;
+    }
+
+    function renderEnding() {
+      scene.innerHTML = `<p class="eyebrow">CASE CLOSED / 復元完了</p><h1>バーチャルD館を<br>取り戻した！</h1><div class="card"><span class="speaker">怪盗</span><p>今回は君たちの勝ちだ。</p><p class="small">探偵から通報を受けた警察が到着し、怪盗を確保した。</p><span class="speaker">怪盗</span><p>いつかは必ず逃げて、もっと難しいゲームでまた挑戦してやる。</p><span class="speaker">探偵</span><p>君がいてくれて助かった。これでD館を元に戻せる。</p></div><div class="card"><h2>あなたが復元したD館</h2><p>完成版のCluster D館は、共有リンクの準備ができ次第ここから開けます。</p><p class="small">Clusterリンク：準備中</p></div><div class="card"><span class="speaker">探偵</span><p>それと、METのブースではVR射的とVR金魚すくいもやっている。よかったら寄っていってくれ。</p></div>`;
+    }
+
+    function render() {
+      const introStage = get(K + "intro-stage") || "start";
+      const introIndex = Number(get(K + "intro-index") || 0);
+      const terminalStages = ["first-call-incoming", "first-call-missed", "first-call-dialogue", "terminal-guide", "terminal-home"];
+      document.body.classList.toggle("is-opening", !yes(K + "intro-done") && introStage === "start");
+      document.body.classList.toggle("is-novel", !yes(K + "intro-done") && (introStage === "choice" || introStage === "after" || introStage === "declined" || introStage === "first-briefing" || (introStage === "before" && introIndex > 0)));
+      document.body.classList.toggle("is-terminal", !yes(K + "intro-done") && terminalStages.includes(introStage));
+      progress();
+      if (yes("d-final-sorting-success")) return renderEnding();
+      if (!yes(K + "intro-done")) return renderIntro();
+      if (!yes("d-building-investigation-complete")) return renderMap();
+      if (!yes(K + "map-reported")) return renderMapReport();
+      if (!yes(K + "read-w") || !yes(K + "read-g")) return renderLetters();
+      const report = nextReport();
+      if (report) return renderReport(report);
+      if (yes("b-center-ar-success") && yes("g-object-ar-success")) return renderFinal();
+      return renderRecovery();
+    }
+
+    function showLetter(which) {
+      mark(K + `read-${which}`);
+      const w = which === "w";
+      modalPanel.innerHTML = `<p class="eyebrow">怪盗の手紙 / ${w ? "1" : "2"}</p><div class="letter"><h3>${w ? "W 至円" : "響在-高見観音"}</h3><p>${w ? "Wリングを取り戻したければ、B館の看板へ来い。" : "石のアートを取り戻したければ、G館近くの彫刻へ来い。"}</p></div><div class="actions">${button("閉じる", "close-modal")}</div>`;
+      modal.hidden = false;
+    }
+
+    function showBag() {
+      const map = yes("d-building-investigation-complete");
+      const b = yes("b-center-ar-success");
+      const g = yes("g-object-ar-success");
+      modalPanel.innerHTML = `<p class="eyebrow">INVESTIGATION BAG</p><h2>調査バッグ</h2><div class="bag-row"><img src="../Assets/ui/detective-communication-terminal.png" alt=""><p><strong>探偵の通信端末</strong><br><span class="small">探偵との連絡に使う</span></p></div>${map ? `<div class="bag-row"><span style="font-size:2rem">✉</span><p><strong>怪盗の手紙 × 2</strong><br><span class="small">回収場所の手がかり</span></p></div><div class="actions">${button("W 至円の手紙", "letter-w", "secondary")}${button("響在-高見観音の手紙", "letter-g", "secondary")}</div>` : ""}${b ? '<div class="bag-row"><img src="../Assets/icons/w-ring-icon.png" alt=""><p>回収済み：W 至円</p></div>' : ""}${g ? '<div class="bag-row"><img src="../Assets/icons/stone-art-icon.png" alt=""><p>回収済み：響在-高見観音</p></div>' : ""}<div class="actions">${button("閉じる", "close-modal")}</div>`;
+      modal.hidden = false;
+    }
+
+    function showFirstHistory() {
+      modalPanel.innerHTML = `<p class="eyebrow">COMMUNICATION LOG</p><h2>通信履歴</h2><div class="history-log"><div class="history-log-row"><strong>探偵</strong><p>${safe(firstCall[0][1])}</p></div><div class="history-log-row is-player"><strong>あなた</strong><p>${safe(firstCall[1][1])}</p></div></div><p class="small">最初の通信は端末に保存されています。</p><div class="actions">${button("閉じる", "close-modal")}</div>`;
+      modal.hidden = false;
+    }
+
+    document.addEventListener("click", event => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+      if (action === "intro-start") { location.href = "./error-popup-sequence.html?fromStory=1"; return; }
+      else if (action === "intro-next") { const i = Number(get(K + "intro-index") || 0) + 1; put(K + "intro-index", String(i)); if (i >= before.length) put(K + "intro-stage", "choice"); }
+      else if (action === "accept") { put(K + "intro-stage", "after"); put(K + "intro-index", "0"); }
+      else if (action === "decline") put(K + "intro-stage", "declined");
+      else if (action === "back-choice") put(K + "intro-stage", "choice");
+      else if (action === "after-next") {
+        const i = Number(get(K + "intro-index") || 0) + 1;
+        if (i === 2) { location.href = "./formal-title-detective.html?fromStory=1"; return; }
+        put(K + "intro-index", String(i));
+      }
+      else if (action === "accept-terminal") { put(K + "intro-stage", "first-call-incoming"); put(K + "intro-index", "0"); }
+      else if (action === "decline-first-call") put(K + "intro-stage", "first-call-missed");
+      else if (action === "answer-first-call") { put(K + "intro-stage", "first-call-dialogue"); put(K + "intro-index", "0"); }
+      else if (action === "first-call-next") {
+        const i = Number(get(K + "intro-index") || 0) + 1;
+        if (i >= firstCall.length) { put(K + "intro-stage", "first-briefing"); put(K + "intro-index", "0"); }
+        else put(K + "intro-index", String(i));
+      }
+      else if (action === "first-brief-next") {
+        const i = Number(get(K + "intro-index") || 0) + 1;
+        if (i >= firstBriefing.length) { put(K + "intro-stage", "terminal-guide"); put(K + "intro-index", "0"); }
+        else put(K + "intro-index", String(i));
+      }
+      else if (action === "open-terminal-home") { put(K + "intro-stage", "terminal-home"); put(K + "intro-index", "0"); }
+      else if (action === "show-first-history") { showFirstHistory(); return; }
+      else if (action === "show-bag") { showBag(); return; }
+      else if (action === "go-first-map") { mark(K + "intro-done"); location.href = "./d-building-map.html"; return; }
+      else if (action === "report-map") mark(K + "map-reported");
+      else if (action === "revisit-map") { location.href = "./d-building-map.html"; return; }
+      else if (action === "letter-w" || action === "letter-g") { showLetter(action.slice(-1)); return; }
+      else if (action === "close-modal") { modal.hidden = true; render(); return; }
+      else if (action === "go-b" || action === "go-g") { if (!get(K + "first-recovery")) put(K + "first-recovery", action.slice(-1)); location.href = action === "go-b" ? "./b-letter-flow/index.html" : "./g-statue-anamorphosis/index.html"; return; }
+      else if (action === "report-b" || action === "report-g") mark(K + "reported-" + action.slice(-1));
+      else if (action === "go-final") { location.href = "./d-final-sorting/index.html"; return; }
+      render();
+    });
+    bagButton.addEventListener("click", showBag);
+    document.getElementById("resetButton").addEventListener("click", () => {
+      if (!confirm("この端末の調査・ゲーム進捗を消して最初から始めますか？")) return;
+      ["d-building-investigation-v1", "d-building-investigation-complete", "b-center-ar-success", "g-object-ar-success", "d-final-sorting-success", ...["intro-stage","intro-index","intro-done","map-reported","read-w","read-g","reported-b","reported-g","first-recovery"].map(key => K + key)].forEach(key => { try { localStorage.removeItem(key); } catch {} });
+      modal.hidden = true;
+      render();
+    });
+    window.addEventListener("pageshow", render);
+    if (new URLSearchParams(location.search).has("afterError")) {
+      put(K + "intro-stage", "before");
+      put(K + "intro-index", "1");
+      try { history.replaceState(null, "", location.pathname + location.hash); } catch { /* Local file URLs may reject history changes. */ }
+    }
+    if (new URLSearchParams(location.search).has("afterTitle")) {
+      put(K + "intro-stage", "after");
+      put(K + "intro-index", "2");
+      try { history.replaceState(null, "", location.pathname + location.hash); } catch { /* Local file URLs may reject history changes. */ }
+    }
+    render();
+  </script>
+</body>
+</html>
