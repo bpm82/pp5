@@ -1,0 +1,795 @@
+<!doctype html>
+<!-- B館の文字ゲームを met-achievements/ar-ennichi-kitan の main (4b6f3d6) から流用。 -->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>B館｜流れる文字のゲーム</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html,
+    body.ar-page {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent !important;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    body.ar-page { font-family: system-ui, -apple-system, "Yu Gothic", sans-serif; }
+
+    button { cursor: pointer; }
+
+    button:focus-visible { outline: 3px solid #f6d17b; outline-offset: 3px; }
+
+    [hidden] { display: none !important; }
+
+    body.ar-page::after { display: none !important; }
+
+    body.ar-page > video {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover !important;
+      z-index: -2 !important;
+    }
+
+    body.ar-page .a-canvas {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: -1 !important;
+    }
+
+    .scan-hud {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 30;
+      width: min(calc(100% - 24px), 440px);
+      transform: translateX(-50%);
+      padding: 14px 16px;
+      color: #fff8e8;
+      background: rgba(12, 14, 24, .82);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      text-align: center;
+      backdrop-filter: blur(9px);
+    }
+
+    .scan-hud h1 {
+      margin: 0 0 6px;
+      font-size: 1.08rem;
+    }
+
+    .scan-hud p {
+      margin: 0;
+      line-height: 1.55;
+      font-size: .9rem;
+    }
+
+    .scan-hud[hidden] { display: none; }
+
+    .scan-skip {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      z-index: 50;
+      width: min(calc(100% - 24px), 430px);
+      padding: 13px 16px;
+      transform: translateX(-50%);
+      border: 1px solid #d7a84a;
+      border-radius: 11px;
+      color: #fff8e8;
+      background: rgba(126, 34, 43, .96);
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .start-overlay,
+    .game-overlay,
+    .clear-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+    }
+
+    .start-overlay.is-visible,
+    .clear-overlay.is-visible {
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(7, 9, 17, .66);
+      backdrop-filter: blur(6px);
+    }
+
+    .start-card,
+    .clear-card {
+      width: min(100%, 430px);
+      padding: 23px 20px;
+      border-radius: 18px;
+      text-align: center;
+      color: #2b2029;
+      background: rgba(247, 238, 218, .98);
+      box-shadow: 0 14px 44px rgba(0,0,0,.28);
+    }
+
+    .start-card .eyebrow,
+    .clear-card .eyebrow {
+      margin: 0 0 7px;
+      color: #8a2f38;
+      font-weight: 800;
+      letter-spacing: .08em;
+      font-size: .78rem;
+    }
+
+    .start-card h2,
+    .clear-card h2 {
+      margin: 0 0 11px;
+      font-size: 1.45rem;
+    }
+
+    .start-card p,
+    .clear-card p {
+      margin: 0 0 15px;
+      line-height: 1.7;
+    }
+
+    .question-box {
+      margin: 15px 0;
+      padding: 13px 14px;
+      color: #fff8e8;
+      background: #362330;
+      border-radius: 12px;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
+    .primary-game-button,
+    .retry-button,
+    .back-link {
+      display: inline-block;
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #681a22;
+      border-radius: 11px;
+      color: #fff8e8;
+      background: linear-gradient(180deg, #ad4048, #7e222b);
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .game-overlay.is-visible {
+      display: block;
+      background:
+        radial-gradient(circle at 50% 120%, rgba(171, 59, 65, .28), transparent 45%),
+        rgba(6, 8, 16, .72);
+      backdrop-filter: blur(3px);
+    }
+
+    .game-header {
+      position: absolute;
+      top: max(10px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 3;
+      width: min(calc(100% - 20px), 480px);
+      transform: translateX(-50%);
+      padding: 13px 14px;
+      color: #fff8e8;
+      background: rgba(20, 16, 27, .90);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,.24);
+    }
+
+    .game-header .mini-title {
+      margin: 0 0 5px;
+      font-size: .78rem;
+      opacity: .78;
+      letter-spacing: .08em;
+    }
+
+    .game-question {
+      margin: 0 0 10px;
+      line-height: 1.45;
+      font-size: .94rem;
+      font-weight: 700;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 9px;
+      font-size: .86rem;
+    }
+
+    .timer {
+      min-width: 62px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .answer-slots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .answer-slot {
+      display: grid;
+      width: 37px;
+      height: 43px;
+      place-items: center;
+      border-bottom: 3px solid rgba(255,248,232,.75);
+      font-size: 1.45rem;
+      font-weight: 900;
+    }
+
+    .answer-slot.is-filled {
+      color: #f6d17b;
+      animation: slot-pop .24s ease-out;
+    }
+
+    @keyframes slot-pop {
+      0% { transform: scale(.65); }
+      75% { transform: scale(1.17); }
+      100% { transform: scale(1); }
+    }
+
+    .letter-field {
+      position: absolute;
+      inset: 185px 0 72px;
+      overflow: hidden;
+    }
+
+    .flying-letter {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      display: grid;
+      width: 62px;
+      height: 62px;
+      place-items: center;
+      border: 2px solid rgba(246, 209, 123, .75);
+      border-radius: 50%;
+      color: #fff8e8;
+      background: rgba(126, 34, 43, .88);
+      box-shadow: 0 6px 20px rgba(0,0,0,.30);
+      font: inherit;
+      font-size: 1.9rem;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      will-change: left, top, transform;
+      animation: fly-anywhere var(--duration, 6s) linear forwards;
+    }
+
+    .flying-letter:nth-child(3n) {
+      border-radius: 16px;
+    }
+
+    @keyframes fly-anywhere {
+      from {
+        left: var(--start-x);
+        top: var(--start-y);
+        transform: rotate(var(--spin-start, 0deg));
+      }
+      to {
+        left: var(--end-x);
+        top: var(--end-y);
+        transform: rotate(var(--spin-end, 0deg));
+      }
+    }
+
+    .flying-letter.is-hit {
+      animation: hit-pop .24s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes hit-pop {
+      0% { transform: scale(1); opacity: 1; }
+      70% { transform: scale(1.6); opacity: .95; }
+      100% { transform: scale(.2); opacity: 0; }
+    }
+
+    .game-message {
+      position: absolute;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      z-index: 4;
+      width: min(calc(100% - 24px), 430px);
+      transform: translateX(-50%);
+      padding: 11px 14px;
+      color: #fff8e8;
+      background: rgba(20,16,27,.88);
+      border-radius: 13px;
+      text-align: center;
+      font-size: .9rem;
+      min-height: 44px;
+    }
+
+    .game-overlay.is-shaking {
+      animation: screen-shake .22s linear;
+    }
+
+    @keyframes screen-shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    .time-up-panel {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(7,9,17,.82);
+    }
+
+    .time-up-panel.is-visible { display: grid; }
+
+    .time-up-card {
+      width: min(100%, 390px);
+      padding: 21px 18px;
+      color: #2b2029;
+      background: #f7eeda;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .time-up-card h3 { margin: 0 0 9px; }
+    .time-up-card p { margin: 0 0 14px; line-height: 1.6; }
+
+    .festival-ticket {
+      display: grid;
+      width: 112px;
+      height: 150px;
+      margin: 0 auto 17px;
+      place-items: center;
+      color: #f8e5a8;
+      background: #7e222b;
+      border: 4px double #d7a84a;
+      border-radius: 9px;
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+      font-size: 4.2rem;
+    }
+
+    .debug-box {
+      position: fixed;
+      right: 10px;
+      bottom: 10px;
+      z-index: 120;
+      display: none;
+      padding: 6px 8px;
+      color: #fff;
+      background: rgba(0,0,0,.7);
+      border-radius: 7px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .debug-box.is-visible { display: block; }
+  </style>
+
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+
+<body class="ar-page">
+  <div class="scan-hud" id="scanHud">
+    <h1>B館の看板を調べる</h1>
+    <p>B-Centerの看板をカメラに映してください。読み取れない場合も下のボタンから進めます。</p>
+  </div>
+
+  <button class="scan-skip" id="skipArButton" type="button">読み取りをスキップして問題へ</button>
+
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-card">
+      <p class="eyebrow">W 至円 / RECOVERY</p>
+      <h2>怪盗が文字を散らした</h2>
+      <p>流れてくる文字を正しい順番で集めて、問いの答えを完成させよう。</p>
+
+      <div class="question-box">
+        模擬店やステージで大学全体が<br>
+        にぎわう、<br>
+        一年に一度の行事は？
+      </div>
+
+      <p style="margin:0 0 14px; font-weight:800; color:#8a2f38;">
+        最初の文字は「が」！
+      </p>
+
+      <button class="primary-game-button" id="startButton" type="button">ゲーム開始</button>
+    </div>
+  </div>
+
+  <div class="game-overlay" id="gameOverlay" aria-live="polite">
+    <div class="game-header">
+      <p class="mini-title">記憶の文字をつなげ</p>
+      <p class="game-question">
+        模擬店やステージで大学全体が<br>
+        にぎわう、<br>
+        一年に一度の行事は？
+      </p>
+
+      <div class="status-row">
+        <span>正しい順にタップ</span>
+        <span class="timer" id="timer">残り 35秒</span>
+      </div>
+
+      <div class="answer-slots" id="answerSlots" aria-label="答え"></div>
+    </div>
+
+    <div class="letter-field" id="letterField"></div>
+
+    <div class="game-message" id="gameMessage">
+      最初の文字は「が」！ 次は「く」を探そう。
+    </div>
+
+    <div class="time-up-panel" id="timeUpPanel">
+      <div class="time-up-card">
+        <h3>文字が流れていってしまった……</h3>
+        <p>大丈夫。答えを思い浮かべて、もう一度挑戦しよう。</p>
+        <button class="retry-button" id="retryButton" type="button">もう一度</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="clear-overlay" id="clearOverlay">
+    <div class="clear-card">
+      <p class="eyebrow">KEYWORD COMPLETE</p>
+      <h2>「がくえんさい」</h2>
+      <p>文字を正しい順に集めた。W 至円の復元記録を保存しました。</p>
+      <button class="back-link" id="backButton" type="button" hidden>本編に戻る</button>
+    </div>
+  </div>
+
+  <div class="debug-box" id="debugBox">target: -</div>
+
+  <a-scene
+    mindar-image="
+      imageTargetSrc: ./targets/b-center.mind;
+      autoStart: true;
+      maxTrack: 1;
+      warmupTolerance: 1;
+      missTolerance: 10;
+      filterMinCF: 0.001;
+      filterBeta: 1000;
+      uiScanning: true;
+      uiLoading: true;
+    "
+    color-space="sRGB"
+    renderer="colorManagement: true, alpha: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="bTarget" mindar-image-target="targetIndex: 0"></a-entity>
+  </a-scene>
+
+  <script>
+    const ANSWER = [..."がくえんさい"];
+    const DECOYS = [..."まつりなつやたいおどりこえひと"];
+    const GAME_SECONDS = 35;
+
+    const query = new URLSearchParams(location.search);
+    const debugMode = query.get("debug") === "1";
+
+    const scanHud = document.getElementById("scanHud");
+    const startOverlay = document.getElementById("startOverlay");
+    const gameOverlay = document.getElementById("gameOverlay");
+    const clearOverlay = document.getElementById("clearOverlay");
+    const startButton = document.getElementById("startButton");
+    const retryButton = document.getElementById("retryButton");
+    const timer = document.getElementById("timer");
+    const answerSlots = document.getElementById("answerSlots");
+    const letterField = document.getElementById("letterField");
+    const gameMessage = document.getElementById("gameMessage");
+    const timeUpPanel = document.getElementById("timeUpPanel");
+    const bTarget = document.getElementById("bTarget");
+    const debugBox = document.getElementById("debugBox");
+    const skipArButton = document.getElementById("skipArButton");
+    const backButton = document.getElementById("backButton");
+
+    let unlocked = false;
+    let playing = false;
+    let answerIndex = 1;
+    let timeLeft = GAME_SECONDS;
+    let spawnCount = 0;
+    let spawnTimer = null;
+    let countdownTimer = null;
+
+    if (debugMode) debugBox.classList.add("is-visible");
+
+    function renderSlots() {
+      answerSlots.replaceChildren();
+
+      ANSWER.forEach((char, index) => {
+        const slot = document.createElement("span");
+        slot.className = "answer-slot";
+
+        if (index < answerIndex) {
+          slot.textContent = char;
+          slot.classList.add("is-filled");
+        } else {
+          slot.textContent = "";
+        }
+
+        answerSlots.appendChild(slot);
+      });
+    }
+
+    function randomFrom(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function removeFlyingLetters() {
+      letterField.querySelectorAll(".flying-letter").forEach(el => el.remove());
+    }
+
+    function randomEdgePoint(edge, width, height, margin) {
+      const usableW = Math.max(1, width - 62);
+      const usableH = Math.max(1, height - 62);
+
+      switch (edge) {
+        case "left":
+          return { x: -margin, y: Math.random() * usableH };
+        case "right":
+          return { x: width + margin, y: Math.random() * usableH };
+        case "top":
+          return { x: Math.random() * usableW, y: -margin };
+        case "bottom":
+          return { x: Math.random() * usableW, y: height + margin };
+      }
+    }
+
+    function getFlightPath(width, height) {
+      const margin = 76;
+
+      const paths = [
+        ["right", "left"],
+        ["left", "right"],
+        ["top", "bottom"],
+        ["bottom", "top"],
+        ["top", "right"],
+        ["right", "bottom"],
+        ["bottom", "left"],
+        ["left", "top"]
+      ];
+
+      const [startEdge, endEdge] = randomFrom(paths);
+      let start = randomEdgePoint(startEdge, width, height, margin);
+      let end = randomEdgePoint(endEdge, width, height, margin);
+
+      if (startEdge === "top" && endEdge === "right") {
+        start.x *= 0.45;
+        end.y = height * (0.55 + Math.random() * 0.35);
+      } else if (startEdge === "right" && endEdge === "bottom") {
+        start.y *= 0.45;
+        end.x = width * (0.10 + Math.random() * 0.35);
+      } else if (startEdge === "bottom" && endEdge === "left") {
+        start.x = width * (0.55 + Math.random() * 0.35);
+        end.y = height * (0.10 + Math.random() * 0.35);
+      } else if (startEdge === "left" && endEdge === "top") {
+        start.y = height * (0.55 + Math.random() * 0.35);
+        end.x = width * (0.55 + Math.random() * 0.35);
+      }
+
+      return { start, end };
+    }
+
+    function spawnLetter() {
+      if (!playing) return;
+
+      spawnCount += 1;
+
+      const shouldSpawnNeeded = spawnCount % 3 === 1;
+      const char = shouldSpawnNeeded
+        ? ANSWER[answerIndex]
+        : randomFrom([...ANSWER, ...DECOYS]);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "flying-letter";
+      button.textContent = char;
+      button.setAttribute("aria-label", `文字 ${char}`);
+
+      const fieldWidth = Math.max(280, letterField.clientWidth);
+      const fieldHeight = Math.max(220, letterField.clientHeight);
+      const { start, end } = getFlightPath(fieldWidth, fieldHeight);
+
+      button.style.setProperty("--start-x", `${Math.round(start.x)}px`);
+      button.style.setProperty("--start-y", `${Math.round(start.y)}px`);
+      button.style.setProperty("--end-x", `${Math.round(end.x)}px`);
+      button.style.setProperty("--end-y", `${Math.round(end.y)}px`);
+
+      const distance = Math.hypot(end.x - start.x, end.y - start.y);
+      const duration = Math.min(7.2, Math.max(4.4, distance / 85));
+      button.style.setProperty("--duration", `${(duration + Math.random() * 0.8).toFixed(2)}s`);
+      button.style.setProperty("--spin-start", `${Math.floor(-10 + Math.random() * 20)}deg`);
+      button.style.setProperty("--spin-end", `${Math.floor(-14 + Math.random() * 28)}deg`);
+
+      button.addEventListener("click", () => handleLetterTap(button, char));
+      button.addEventListener("animationend", event => {
+        if (event.animationName === "fly-anywhere") button.remove();
+      });
+
+      letterField.appendChild(button);
+    }
+
+    function showMessage(text) {
+      gameMessage.textContent = text;
+    }
+
+    function wrongTap() {
+      timeLeft = Math.max(0, timeLeft - 2);
+      updateTimer();
+      showMessage("違う文字だ……！ 残り時間 -2秒");
+
+      gameOverlay.classList.remove("is-shaking");
+      void gameOverlay.offsetWidth;
+      gameOverlay.classList.add("is-shaking");
+
+      if (navigator.vibrate) navigator.vibrate(50);
+
+      if (timeLeft <= 0) {
+        finishTimeUp();
+      }
+    }
+
+    function handleLetterTap(button, char) {
+      if (!playing) return;
+
+      const needed = ANSWER[answerIndex];
+
+      if (char !== needed) {
+        wrongTap();
+        return;
+      }
+
+      button.classList.add("is-hit");
+      button.disabled = true;
+
+      answerIndex += 1;
+      renderSlots();
+
+      if (navigator.vibrate) navigator.vibrate(30);
+
+      if (answerIndex >= ANSWER.length) {
+        finishClear();
+        return;
+      }
+
+      showMessage(`正解！ 次は「${ANSWER[answerIndex]}」を探そう。`);
+    }
+
+    function updateTimer() {
+      timer.textContent = `残り ${timeLeft}秒`;
+
+      if (timeLeft <= 10) {
+        timer.style.color = "#f6d17b";
+      } else {
+        timer.style.removeProperty("color");
+      }
+    }
+
+    function clearGameTimers() {
+      if (spawnTimer) {
+        clearInterval(spawnTimer);
+        spawnTimer = null;
+      }
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    }
+
+    function startGame() {
+      if (!unlocked) return;
+
+      clearGameTimers();
+      removeFlyingLetters();
+
+      playing = true;
+      answerIndex = 1;
+      timeLeft = GAME_SECONDS;
+      spawnCount = 0;
+
+      renderSlots();
+      updateTimer();
+
+      startOverlay.classList.remove("is-visible");
+      timeUpPanel.classList.remove("is-visible");
+      gameOverlay.classList.add("is-visible");
+      showMessage("最初の文字は「が」！ 次は「く」を探そう。");
+
+      // 最初の文字は待たせず出す
+      spawnLetter();
+      setTimeout(() => playing && spawnLetter(), 350);
+      setTimeout(() => playing && spawnLetter(), 700);
+
+      spawnTimer = setInterval(spawnLetter, 850);
+
+      countdownTimer = setInterval(() => {
+        if (!playing) return;
+
+        timeLeft -= 1;
+        updateTimer();
+
+        if (timeLeft <= 0) {
+          finishTimeUp();
+        }
+      }, 1000);
+    }
+
+    function finishTimeUp() {
+      if (!playing) return;
+      playing = false;
+      clearGameTimers();
+      removeFlyingLetters();
+      timeUpPanel.classList.add("is-visible");
+      showMessage("時間切れ。もう一度挑戦できるよ。");
+    }
+
+    function finishClear() {
+      if (!playing) return;
+
+      playing = false;
+      clearGameTimers();
+
+      localStorage.setItem("b-center-ar-success", "true");
+
+      if (navigator.vibrate) navigator.vibrate([60, 40, 100]);
+
+      setTimeout(() => {
+        gameOverlay.classList.remove("is-visible");
+        clearOverlay.classList.add("is-visible");
+      }, 300);
+    }
+
+    function unlockGame(skipped = false) {
+      if (unlocked) return;
+      unlocked = true;
+      scanHud.hidden = true;
+      skipArButton.hidden = true;
+      debugBox.textContent = skipped ? "target: skipped" : "target: 0";
+      startOverlay.classList.add("is-visible");
+    }
+
+    bTarget.addEventListener("targetFound", () => unlockGame(false));
+    skipArButton.addEventListener("click", () => unlockGame(true));
+
+    bTarget.addEventListener("targetLost", () => {
+      debugBox.textContent = "target: -";
+
+      // 一度B-Centerを発見した後は、追跡が切れてもゲームを続行できる。
+      if (!unlocked) {
+        scanHud.hidden = false;
+      }
+    });
+
+    startButton.addEventListener("click", startGame);
+    retryButton.addEventListener("click", startGame);
+    backButton.hidden = false;
+    backButton.addEventListener("click", () => { location.href = "../index.html"; });
+
+    renderSlots();
+  </script>
+</body>
+</html>
