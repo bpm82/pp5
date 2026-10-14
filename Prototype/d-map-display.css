@@ -1,0 +1,251 @@
+/* Adopted blue 1. PC DEBUG can compare levels without recoloring the terminal. */
+:root {
+  --effect-map-filter: url('#d-map-digital-1');
+  --effect-map-background: #cfe3e7;
+  --effect-map-wash: transparent;
+  --effect-map-reflection: rgba(193, 234, 255, .025);
+  --effect-filter: url('#d-model-blue-1') brightness(1.04) contrast(1.025);
+  --effect-splat-filter: url('#d-splat-blue-1') brightness(1.04) contrast(1.025);
+  --effect-wash: rgba(99, 162, 207, .015);
+  --effect-reflection: rgba(230, 245, 251, .025);
+  --effect-edge: rgba(134, 181, 213, .44);
+  --effect-rim: rgba(122, 174, 207, .08);
+  --effect-corner: #4f8396;
+  --effect-record-corner: #c2e4f7bc;
+  --scan-core: rgba(224, 249, 255, .92);
+  --scan-flank: rgba(157, 222, 252, .24);
+  --scan-halo: rgba(86, 179, 237, .08);
+}
+body[data-map-blue-level="2"] {
+  --effect-map-filter: url('#d-map-digital-2');
+  --effect-map-background: #c4dbe2;
+  --effect-filter: url('#d-model-blue-2') brightness(1.04) contrast(1.025);
+  --effect-splat-filter: url('#d-splat-blue-2') brightness(1.04) contrast(1.025);
+  --effect-wash: rgba(99, 162, 207, .025);
+  --effect-reflection: rgba(205, 230, 250, .035);
+}
+body[data-map-blue-level="3"],
+body[data-map-blue-level="4"],
+body[data-map-blue-level="5"] {
+  --effect-filter: url('#d-model-blue-glass') brightness(1.04) contrast(1.025);
+  --effect-splat-filter: url('#d-splat-blue-2') brightness(1.04) contrast(1.025);
+  --effect-reflection: rgba(205, 230, 250, .045);
+}
+body[data-map-blue-level="3"] {
+  --effect-map-filter: url('#d-map-digital-3');
+  --effect-map-background: #b8d2de;
+  --effect-wash: rgba(99, 162, 207, .035);
+}
+body[data-map-blue-level="4"] {
+  --effect-map-filter: url('#d-map-digital-4');
+  --effect-map-background: #acccda;
+  --effect-wash: rgba(99, 162, 207, .045);
+}
+body[data-map-blue-level="5"] {
+  --effect-map-filter: url('#d-map-digital-5');
+  --effect-map-background: #9fc4d7;
+  --effect-wash: rgba(99, 162, 207, .055);
+}
+.d-map-display .header h1 { font-size: clamp(20px, 5.6vw, 24px); letter-spacing: .02em; }
+.d-map-display .header h1 span { white-space: nowrap; }
+.d-map-display .investigation-card { border-color: var(--border); background: linear-gradient(145deg, var(--surface), var(--paper)); }
+.d-map-display .card-nav,
+.d-map-display .record-tools button,
+.d-map-display .close-investigation { background: var(--surface); }
+.d-map-display button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.d-map-display .record-viewport[data-format="splat"] canvas { filter: var(--effect-splat-filter); }
+.terminal-home-map { background: var(--effect-map-background); }
+.terminal-home-map img { filter: var(--effect-map-filter); }
+body.d-map-display .map-shell,
+body.d-map-display .record-viewport {
+  isolation: isolate;
+  position: relative;
+  border: 1px solid var(--effect-edge);
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px var(--effect-rim), inset 0 0 18px var(--effect-rim), 0 0 12px var(--effect-rim);
+}
+body.d-map-display .record-viewport canvas,
+body.d-map-display .selected-monument:not([data-selected="true"]) img {
+  filter: var(--effect-filter);
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+body.d-map-display .floor-map {
+  filter: var(--effect-map-filter);
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+/* Color also covers transparent/white map surroundings, within this display. */
+body.d-map-display .map-shell {
+  --effect-wash: var(--effect-map-wash);
+  --effect-reflection: var(--effect-map-reflection);
+  background: var(--effect-map-background);
+}
+body.d-map-display .map-shell .map-viewport,
+body.d-map-display .map-shell .map-canvas {
+  background: var(--effect-map-background);
+}
+/* Only the selected overlay keeps its source color, above wash and scan.
+   Its source PNG has a built-in edge; no additional frame is drawn here. */
+.selected-monument {
+  isolation: isolate;
+  z-index: 6;
+  width: clamp(40px, 7.2%, 64px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  overflow: visible;
+}
+.selected-monument[data-selected="true"] img {
+  filter: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+  animation: selected-location-arrival 300ms ease-out both;
+}
+@keyframes selected-location-arrival {
+  from { transform: scale(.86); opacity: .65; }
+  55% { transform: scale(1.10); opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* A single overlay includes both glass and eight corner lines.
+   Selected icons deliberately stack above it to retain their source colors. */
+body.d-map-display .map-shell::after,
+body.d-map-display .record-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(var(--effect-corner) 0 0) left 10px top 10px / 18px 2px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) left 10px top 10px / 2px 18px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) right 10px top 10px / 18px 2px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) right 10px top 10px / 2px 18px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) left 10px bottom 10px / 18px 2px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) left 10px bottom 10px / 2px 18px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) right 10px bottom 10px / 18px 2px no-repeat,
+    linear-gradient(var(--effect-corner) 0 0) right 10px bottom 10px / 2px 18px no-repeat,
+    linear-gradient(125deg, var(--effect-reflection), transparent 45%, transparent 72%, var(--effect-reflection)),
+    linear-gradient(var(--effect-wash), var(--effect-wash));
+  box-shadow: inset 0 0 0 1px var(--effect-rim);
+}
+body.d-map-display .record-viewport { --effect-corner: var(--effect-record-corner); }
+
+/* JS chooses the interval and duration. One class triggers one upward sweep. */
+body.d-map-display .map-shell::before,
+body.d-map-display .record-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 44%, var(--scan-halo) 47%, var(--scan-flank) 49.2%, var(--scan-core) 49.9%, var(--scan-core) 50.1%, var(--scan-flank) 51.2%, transparent 55%);
+  opacity: 0;
+  animation: none;
+}
+body.d-map-display .map-shell.is-scanning::before,
+body.d-map-display .record-viewport.is-scanning::before {
+  animation: data-read-rise var(--scan-duration, 1400ms) linear both;
+}
+@keyframes data-read-rise {
+  from { transform: translateY(60%); opacity: 0; }
+  12% { opacity: .9; }
+  85% { opacity: .9; }
+  to { transform: translateY(-60%); opacity: 0; }
+}
+@media (min-width: 431px) {
+  .app { margin-block: 0; border-radius: 0; min-height: 100dvh; }
+}
+@media (max-height: 700px) {
+  .header { padding-block: calc(12px + env(safe-area-inset-top)) 10px; }
+  .guide { min-height: 28px; margin-block: 3px; }
+  .map-viewport { height: 220px; }
+  .map-canvas { width: calc(220px * 2.409); }
+  .selection { min-height: 86px; }
+  .selection-hint { margin-bottom: 6px; font-size: 10px; }
+  .explore { margin-bottom: 10px; }
+}
+@media (max-height: 640px) {
+  .map-viewport { height: 180px; }
+  .map-canvas { width: calc(180px * 2.409); }
+  .guide { padding-block: 3px; min-height: 24px; }
+  .selection-hint { margin-top: 4px; margin-bottom: 4px; }
+  .record-viewport { height: clamp(180px, 30dvh, 220px); }
+  .completion-note { margin-block: 6px; padding: 8px 10px; }
+  .terminal-return { margin-bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.d-map-display .map-shell::before,
+  body.d-map-display .record-viewport::before {
+    display: none !important;
+    animation: none !important;
+  }
+  .selected-monument[data-selected="true"] img {
+    animation: none !important;
+    filter: none;
+    opacity: 1;
+  }
+}
+
+
+/* The map is a bounded projection plane inside the detective's instrument.
+   Broken outer tracks and an inset contour mark that boundary, without a grid. */
+.map-field-boundary { display: none; }
+body.d-map-display .map-shell {
+  border-color: rgba(31, 77, 82, .86);
+  box-shadow: 0 0 0 3px #0b211d, 0 0 0 4px rgba(133, 199, 211, .28),
+    0 7px 14px rgba(0, 14, 20, .16), inset 0 0 0 1px rgba(228, 249, 253, .62);
+}
+body.d-map-display .map-field-boundary {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  fill: none;
+}
+.map-field-boundary path { vector-effect: non-scaling-stroke; }
+.map-field-boundary .field-outline {
+  stroke: rgba(58, 116, 137, .46);
+  stroke-width: .8px;
+}
+.map-field-boundary .field-couplings {
+  stroke: rgba(56, 125, 151, .68);
+  stroke-width: 1.1px;
+  transition: stroke .18s ease, filter .18s ease;
+}
+.map-field-boundary .field-segments {
+  stroke: rgba(233, 253, 255, .90);
+  stroke-width: 1.5px;
+  stroke-dasharray: 13 6 2 6;
+  filter: drop-shadow(0 0 1px rgba(39, 139, 181, .30));
+  transition: stroke .18s ease, filter .18s ease;
+}
+body.d-map-display .map-shell.is-scanning .field-couplings {
+  stroke: rgba(70, 165, 190, .90);
+  filter: drop-shadow(0 0 2px rgba(62, 151, 181, .35));
+}
+body.d-map-display .map-shell.is-scanning .field-segments {
+  stroke: #f4ffff;
+  filter: drop-shadow(0 0 2px rgba(39, 139, 181, .38));
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-field-boundary .field-couplings,
+  .map-field-boundary .field-segments { transition: none; }
+}
+
+/* The lighter map and darker 3D data share a frame but need different scan light. */
+body.d-map-display .map-shell {
+  --scan-core: #4b99c8;
+  --scan-flank: rgba(75, 153, 200, .20);
+  --scan-halo: rgba(120, 186, 226, .07);
+}
+body.d-map-display .record-viewport {
+  border-color: rgba(14, 35, 50, .96);
+  box-shadow: inset 0 0 0 1px rgba(120, 174, 208, .16), inset 0 0 16px rgba(0, 14, 24, .20), 0 0 9px rgba(117, 166, 207, .075);
+}
